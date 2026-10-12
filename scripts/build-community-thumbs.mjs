@@ -42,7 +42,8 @@ for (const theme of ["light", "dark"]) {
   const page = await ctx.newPage();
   await page.goto(SITE + "/library.html", { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
-  await page.addStyleTag({ content: ".card-stage:not(.thumb-keep) .btn-animate { visibility: hidden !important; }" });
+  // The Pro badge is left out: the picker puts the real one on the thumbnail.
+  await page.addStyleTag({ content: ".card-stage:not(.thumb-keep) .btn-animate { visibility: hidden !important; } .card-pro-badge { display: none !important; }" });
   await page.mouse.move(2, 2);
   let n = 0;
   for (const t of items) {

@@ -935,9 +935,9 @@
     return proP;
   }
   function hasProPlan() { return !!(window.TransitionsPro && TransitionsPro.state && TransitionsPro.state.pro); }
-  function thumbUrl(slug, dark) {
+  function thumbUrl(slug, dark, pro) {
     // ?v= changes when the thumbnails are rebuilt (now 2x, without demo buttons).
-    return "assets/community/thumbs/" + encodeURIComponent(slug) + (dark ? "-dark" : "") + ".jpg?v=2";
+    return "assets/community/thumbs/" + encodeURIComponent(slug) + (dark ? "-dark" : "") + ".jpg?v=" + (pro ? 3 : 2);
   }
   var CLOSE_SVG = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
   // The homepage's categories (Pro transitions are not remixable; free
@@ -996,9 +996,9 @@
             html += '<button type="button" class="cmdk-item cm-lib-item' + (t.locked ? " is-locked" : "") + '" role="option" data-i="' + i + '" data-active="' + (i === active) + '"' +
               (t.locked ? ' aria-disabled="true" aria-describedby="cm-lib-pro-note"' : "") + ">" +
               '<span class="cm-lib-thumb">' +
-                (t.locked ? '<span class="t-tt cm-lib-tip" aria-hidden="true">Available with Pro &amp; Business</span>' : "") +
-                '<img class="is-light" src="' + thumbUrl(t.slug) + '" alt="" width="296" height="260" loading="lazy" decoding="async" />' +
-                '<img class="is-dark" src="' + thumbUrl(t.slug, true) + '" alt="" width="296" height="260" loading="lazy" decoding="async" />' +
+                (t.locked ? '<span class="card-pro-badge" aria-hidden="true">Pro</span><span class="t-tt cm-lib-tip" aria-hidden="true">Available with Pro &amp; Business</span>' : "") +
+                '<img class="is-light" src="' + thumbUrl(t.slug, false, t.locked) + '" alt="" width="296" height="260" loading="lazy" decoding="async" />' +
+                '<img class="is-dark" src="' + thumbUrl(t.slug, true, t.locked) + '" alt="" width="296" height="260" loading="lazy" decoding="async" />' +
               "</span>" +
               '<span class="cm-lib-name">' + esc(t.title) + "</span>" +
             "</button>";
