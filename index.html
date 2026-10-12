@@ -6130,6 +6130,35 @@
     }
   </style>
   <link rel="stylesheet" href="assets/nav-products.css?v=3" />
+  <link rel="stylesheet" href="assets/community/community.css?v=245" />
+  <style>
+    /* ─── Homepage layout ──────────────────────────────────────────
+       The hero is the Builder's: title, two lines of copy, its prompt
+       box (community.css .cm-hero). The library runs full width like the
+       library page and the Community feed (columns of at least 320px,
+       16px gaps, 20px gutters); every other block keeps the 1192px column. */
+    .home-hero .subtitle { max-width: 600px; text-wrap: balance; }
+    .app { max-width: none; padding-left: 20px; padding-right: 20px; }
+    /* Zero specificity: a block with its own measure (the sponsors and the
+       Motion Agent bento, 1008px) keeps it; the rest get the old column. */
+    :where(.app) > :where(:not(.cards, .cards-toolbar, .home-section-head, .home-community)) {
+      width: 100%; max-width: 1192px; margin-left: auto; margin-right: auto;
+    }
+    .cards {
+      grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+      justify-content: stretch;
+      gap: 16px;
+    }
+    .cards > .card { width: auto; }
+    .cards > .card > .card-stage { width: calc(100% - 24px); max-width: none; }
+    .cards-toolbar, .app > .home-section-head, .home-community .home-section-head { max-width: none; }
+    /* Community: one row, a See more button beside the lead. */
+    .home-community { width: 100%; margin: 96px 0; }
+    .cards-browse { flex: none; height: 36px; }
+    @media (max-width: 720px) { .home-community { margin: 64px 0; } }
+    .home-section-head--row { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+    .home-community-row { grid-template-rows: auto; }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -6295,34 +6324,64 @@
       </nav>
     </header>
 
-    <header class="header">
-      <div class="header-icon-wrap" aria-hidden="true">
-        <img
-          class="header-icon-img header-icon-img--light"
-          src="assets/icon%20light%202x.png"
-          alt=""
-          width="136"
-          height="140"
-          decoding="async"
-        />
-        <img
-          class="header-icon-img header-icon-img--dark"
-          src="assets/icon-dark-2x.png?v=2"
-          alt=""
-          width="136"
-          height="140"
-          decoding="async"
-        />
-      </div>
+    <header class="header cm-hero home-hero">
       <h1 class="title">Better UI motion<br />and craft start here</h1>
       <p class="subtitle">
         AI agents for motion and UI craft, a <a class="subtitle-skill" href="/builder.html">component builder</a>,
         a <a class="subtitle-skill" href="/library.html">library</a> of 43+ crafted transitions,
         and a skill that fits your workflow.
       </p>
-      <div class="skill-cta-row">
-        <a class="skill-btn skill-btn--primary" href="/pro.html" data-join-free>Join for free</a>
-        <a class="skill-btn skill-btn--secondary" href="/library.html">Browse</a>
+      <!-- Composer (Figma 1696:36087): attached images on top, the prompt, then
+           + and Remix on the left, the Agent menu and send on the right.
+           Wrapped in the libraries.dev border beam (pulse-outside, beam.js). -->
+      <div class="cm-beam" id="cm-beam">
+      <form class="cm-composer" id="cm-composer" novalidate>
+        <label class="sr-only" for="cm-prompt">Describe a component</label>
+        <div class="cm-imgs" id="cm-imgs" aria-label="Attached images" hidden></div>
+        <textarea id="cm-prompt" rows="1" maxlength="2000" placeholder="Describe your component or change"></textarea>
+        <input type="file" id="cm-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden />
+        <div class="cm-composer-row">
+          <div class="st-menu-anchor">
+            <button type="button" class="cm-round" id="cm-plus" aria-label="More ways to start" aria-haspopup="menu" aria-expanded="false">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <div class="tl-menu t-dropdown tl-menu--left" id="cm-plus-menu" role="menu" aria-label="More ways to start">
+              <button type="button" class="tl-menu-item" role="menuitem" id="cm-upload"><svg class="cm-menu-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2.75" width="12" height="10.5" rx="2" stroke="currentColor" stroke-width="1.4"/><circle cx="5.75" cy="6.25" r="1.25" fill="currentColor"/><path d="m2.5 11.5 3.2-3 2.3 2 2.2-2.2 3.3 3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tl-menu-item-label">Attach image</span></button>
+              <button type="button" class="tl-menu-item" role="menuitem" data-add="skill"><svg class="cm-menu-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3.5A1.5 1.5 0 0 1 4.5 2H13v10H4.5A1.5 1.5 0 0 0 3 13.5m0-10v10m0 0A1.5 1.5 0 0 0 4.5 15H13v-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tl-menu-item-label">Add skill</span></button>
+              <button type="button" class="tl-menu-item" role="menuitem" data-add="library"><svg class="cm-menu-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.75 13.5 4.8v6.4L8 14.25 2.5 11.2V4.8L8 1.75Zm0 0v12.5M2.5 4.8 8 7.9l5.5-3.1" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="tl-menu-item-label">Add library</span></button>
+            </div>
+          </div>
+          <!-- Remix: picks a library transition to start from (Agent pill styling). -->
+          <div class="cm-remix" id="cm-remix">
+            <button type="button" class="cm-remix-btn" id="cm-remix-btn" aria-haspopup="dialog">
+              <span class="cm-remix-key">Remix</span>
+              <span class="cm-remix-val" id="cm-remix-val"></span>
+              <svg class="cm-remix-chev" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.46967 6.46967C4.76256 6.17678 5.23744 6.17678 5.53033 6.46967L8 8.93934L10.4697 6.46967C10.7626 6.17678 11.2374 6.17678 11.5303 6.46967C11.8232 6.76256 11.8232 7.23744 11.5303 7.53033L8.53033 10.5303C8.23744 10.8232 7.76256 10.8232 7.46967 10.5303L4.46967 7.53033C4.17678 7.23744 4.17678 6.76256 4.46967 6.46967Z"/></svg>
+            </button>
+            <button type="button" class="cm-remix-clear" id="cm-remix-clear" aria-label="Stop remixing" hidden>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <span class="cm-grow"></span>
+          <div class="st-menu-anchor">
+            <button type="button" class="cm-agent" id="cm-agent" aria-haspopup="menu" aria-expanded="false">
+              <span id="cm-agent-label">Agent</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.46967 6.46967C4.76256 6.17678 5.23744 6.17678 5.53033 6.46967L8 8.93934L10.4697 6.46967C10.7626 6.17678 11.2374 6.17678 11.5303 6.46967C11.8232 6.76256 11.8232 7.23744 11.5303 7.53033L8.53033 10.5303C8.23744 10.8232 7.76256 10.8232 7.46967 10.5303L4.46967 7.53033C4.17678 7.23744 4.17678 6.76256 4.46967 6.46967Z"/></svg>
+            </button>
+            <div class="tl-menu t-dropdown st-agent-menu cm-agent-menu" id="cm-agent-menu" role="menu" aria-label="Agent">
+              <p class="tl-menu-group">Builds in</p>
+              <button type="button" class="tl-menu-item" role="menuitemradio" data-mode="html" aria-checked="true"><span class="tl-menu-item-label">HTML/CSS</span><span class="tl-menu-trail"><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span></button>
+              <button type="button" class="tl-menu-item" role="menuitemradio" data-mode="react" aria-checked="false"><span class="tl-menu-item-label">React</span><span class="tl-menu-trail"><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span></button>
+              <div class="tl-menu-divider" id="cm-quota-rule" hidden></div>
+              <p class="tl-menu-note" id="cm-quota" hidden></p>
+            </div>
+          </div>
+          <button type="submit" class="cm-round cm-send" id="cm-send" aria-label="Build with the agent" disabled>
+            <svg class="cm-arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M7.99967 12.6667V3.33337M12.6663 8.00004L7.99967 3.33337L3.33301 8.00004" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="cm-spin" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
       </div>
     </header>
 
@@ -6354,25 +6413,8 @@
         <button type="button" class="cards-filter" data-filter="texts" data-active="false" role="tab" aria-selected="false"><span class="cards-filter-label">Texts</span></button>
         <button type="button" class="cards-filter" data-filter="pro" data-active="false" role="tab" aria-selected="false"><span class="cards-filter-label">Pro</span></button>
       </div>
-      <div class="pm-anchor cards-sort-anchor">
-        <button type="button" class="cards-sort" id="cards-sort-btn" aria-label="Sort transitions" aria-haspopup="menu" aria-expanded="false">
-          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 3.33H12.67V4.67H2V3.33ZM12.67 6.67V11.06L14 9.72L14.94 10.67L12 13.61L9.06 10.67L10 9.72L11.33 11.06V6.67H12.67ZM2 7.33H8V8.67H2V7.33ZM2 11.33H6.67V12.67H2V11.33Z" fill="currentColor"/></svg>
-        </button>
-        <div class="tl-menu t-dropdown cards-sort-menu" id="cards-sort-menu" data-origin="top-right" role="menu" aria-label="Sort order">
-          <div class="tl-menu-item cards-sort-opt" data-sort="default" role="menuitemradio" aria-checked="true" tabindex="0">
-            <span class="tl-menu-item-label">Default</span>
-            <span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          </div>
-          <div class="tl-menu-item cards-sort-opt" data-sort="oldest" role="menuitemradio" aria-checked="false" tabindex="0">
-            <span class="tl-menu-item-label">Oldest first</span>
-            <span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          </div>
-          <div class="tl-menu-item cards-sort-opt" data-sort="newest" role="menuitemradio" aria-checked="false" tabindex="0">
-            <span class="tl-menu-item-label">Newest first</span>
-            <span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          </div>
-        </div>
-      </div>
+      <!-- The homepage shows one row: Browse all takes the sort button's place. -->
+      <a class="skill-btn skill-btn--secondary cards-browse" href="/library.html">Browse all</a>
     </div>
 
     <section class="cards" id="components" aria-label="Transition prototypes" style="scroll-margin-top: 24px;">
@@ -7692,9 +7734,16 @@
 
 
     </section>
-    <div class="home-browse-all">
-      <a class="skill-btn skill-btn--secondary" href="/library.html">Browse all</a>
-    </div>
+
+    <!-- ─── From the Community: one row of the most popular components
+         (feed.js fills it with as many as fit the row). ─── -->
+    <section class="cm-feed home-community" aria-labelledby="home-community-title">
+      <div class="home-section-head home-section-head--row">
+        <h2 class="home-section-title" id="home-community-title">Community <span class="dim">components people build with the Builder.</span></h2>
+        <a class="skill-btn skill-btn--secondary" href="/community.html">See more</a>
+      </div>
+      <div class="cards home-community-row" id="home-community-grid"></div>
+    </section>
 
     <!-- ─── Transitions Motion Agent: the bento from agent.html ─── -->
     <section class="home-agent" aria-labelledby="home-agent-title">
@@ -7877,6 +7926,51 @@
       </div>
       <p class="footer-credit"><span class="footer-muted">Created by</span><a class="footer-name" href="https://x.com/jakubantalik" target="_blank" rel="noopener noreferrer">Jakub Antalik</a></p>
     </footer>
+    <!-- The Studio's skill editor and libraries, opened from the + menu. -->
+    <div class="st-dialog" id="st-skill-dlg" hidden>
+      <form class="st-dialog-card st-skill-card" role="dialog" aria-modal="true" aria-labelledby="st-skill-title" novalidate>
+        <div class="st-dialog-head">
+          <h2 id="st-skill-title">Add a skill</h2>
+          <button type="button" class="cm-btn cm-btn--icon cm-btn--ghost" data-close aria-label="Close">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="st-skill-body">
+          <label class="st-field"><span>Name</span>
+            <input id="st-skill-name" type="text" maxlength="60" placeholder="House style" autocomplete="off" />
+          </label>
+          <label class="st-field"><span>Instructions</span>
+            <textarea id="st-skill-content" maxlength="20000" spellcheck="false" placeholder="Paste a SKILL.md, or write the guidance the agent should follow: colors, radii, type, motion rules."></textarea>
+          </label>
+          <div class="st-skill-meta">
+            <label class="cm-btn cm-btn--ghost st-skill-upload">Upload .md<input type="file" id="st-skill-file" accept=".md,.markdown,.txt,text/markdown,text/plain" /></label>
+            <span id="st-skill-count">0 / 20,000</span>
+          </div>
+          <p class="st-skill-err" id="st-skill-err" role="alert" hidden></p>
+        </div>
+        <div class="st-skill-foot">
+          <button type="button" class="cm-btn cm-btn--ghost st-skill-del" id="st-skill-del" hidden>Delete</button>
+          <span class="cm-grow"></span>
+          <button type="button" class="cm-btn cm-btn--ghost" data-close>Cancel</button>
+          <button type="submit" class="cm-btn cm-btn--primary" id="st-skill-save">Save skill</button>
+        </div>
+      </form>
+    </div>
+    <div class="st-dialog" id="st-libs-dlg" hidden>
+      <div class="st-dialog-card st-libs-card" role="dialog" aria-modal="true" aria-labelledby="st-libs-title">
+        <div class="st-dialog-head">
+          <h2 id="st-libs-title">Libraries</h2>
+          <button type="button" class="cm-btn cm-btn--icon cm-btn--ghost" data-close aria-label="Close">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="st-libs-body">
+          <p class="st-libs-lead">Preinstalled from libraries.dev, free tier. Import them in React components; the ones you add are explained to the agent.</p>
+          <div class="st-libs-list" id="st-libs-list" role="list"></div>
+          <p class="st-libs-note" id="st-libs-note" hidden></p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- ─── Prototype detail modal ──────────────────────────────── -->
@@ -14393,16 +14487,19 @@ var grid = document.getElementById("components");
 if (!toolbar || !grid) return;
 var cards = Array.prototype.slice.call(grid.querySelectorAll(".card[data-seq]"));
 var tabs = Array.prototype.slice.call(toolbar.querySelectorAll(".cards-filter"));
-var PEEK = 3;
+/* One full row of the full-width grid: as many cards as it has columns. */
+function peekCount() { return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length); }
+var PEEK = peekCount();
 var curKey = "all", curMode = "default";
+window.addEventListener("resize", function () { var n = peekCount(); if (n !== PEEK) { PEEK = n; applyPeek(); } });
 function matches(c, key) {
 return key === "all" ||
 (key === "pro"
 ? c.getAttribute("data-pro") === "true"
 : (c.getAttribute("data-cat") || "").split(" ").indexOf(key) !== -1);
 }
-/* Sneak peek: the homepage shows the first three cards of the current
-   filter and sort; the Library page shows them all. */
+/* Sneak peek: the homepage shows one row of the current filter and sort;
+   the Library page shows them all. */
 function applyPeek() {
 var shown = cards.filter(function (c) { return matches(c, curKey); });
 if (curMode !== "default") {
@@ -14451,6 +14548,7 @@ applyPeek();
 applySort("default");
 var sortBtn = document.getElementById("cards-sort-btn");
 var sortMenu = document.getElementById("cards-sort-menu");
+if (!sortBtn || !sortMenu) return; // the homepage has Browse all in its place
 var closeMs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dropdown-close-dur")) || 150;
 var closeT = null;
 function openMenu() {
@@ -15601,6 +15699,9 @@ btn.textContent = STATES[i].label;
 </script>
   <!-- Pro platform client: mounts Pro badges on data-pro cards, reads auth state. -->
   <script src="assets/pro-client.js?v=67" defer></script>
+  <script src="assets/community/community.js?v=244" defer></script>
+  <script src="assets/community/beam.js?v=140" defer></script>
+  <script src="assets/community/feed.js?v=151" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
   <script src="assets/nav-products.js?v=7" defer></script>
 </body>

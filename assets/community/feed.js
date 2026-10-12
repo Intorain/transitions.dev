@@ -420,6 +420,27 @@
     load();
   })();
 
+  if (document.getElementById("home-community-grid")) (function () {
+    // ── Homepage: one row of the most popular components ──────────────────────
+    // As many as fit the row at this width (the grid's column count); the
+    // rest stay hidden and come back when the row widens.
+    var grid = document.getElementById("home-community-grid");
+    function fit() {
+      var cols = getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
+      Array.prototype.forEach.call(grid.children, function (el, i) { el.hidden = i >= cols; });
+    }
+    C.api.feed("popular", 0).then(function (r) {
+      if (r.error || !r.items || !r.items.length) { grid.closest("section").hidden = true; return; }
+      r.items.slice(0, 6).forEach(function (c, i) {
+        var el = C.card(c);
+        el.style.animationDelay = i * 40 + "ms";
+        grid.appendChild(el);
+      });
+      fit();
+    });
+    window.addEventListener("resize", fit);
+  })();
+
   if (document.getElementById("cm-grid")) (function () {
     // ── Feed ────────────────────────────────────────────────────────────────────
     var grid = document.getElementById("cm-grid");
