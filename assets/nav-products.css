@@ -24,3 +24,20 @@
   .mobile-menu-sub { transition: none; }
   .mobile-menu-sub-list { filter: none; transition: opacity 150ms linear; }
 }
+/* The same top bar and footer on every page: the bar's content on a 1192px
+   column, the footer on 1008px, centered on the window with a 24px gutter,
+   whatever width the page's own column runs at (the library and the
+   Community feeds go full width, the Agent page's column is 960px). Equal
+   margins center them whether or not the parent centers its children. */
+@media (min-width: 901px) {
+  header.site-nav > .site-nav-inner {
+    --w: min(1192px, 100vw - 48px);
+    box-sizing: border-box; width: var(--w); max-width: none; padding-left: 0; padding-right: 0;
+    margin-left: calc((100% - var(--w)) / 2); margin-right: calc((100% - var(--w)) / 2);
+  }
+  footer.footer {
+    --w: min(1008px, 100vw - 48px);
+    box-sizing: border-box; width: var(--w) !important; max-width: none !important;
+    margin-left: calc((100% - var(--w)) / 2) !important; margin-right: calc((100% - var(--w)) / 2) !important;
+  }
+}
