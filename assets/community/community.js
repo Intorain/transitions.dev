@@ -988,16 +988,20 @@
         var q = input.value.trim().toLowerCase();
         shown = [];
         var html = "";
-        LIB_GROUPS.forEach(function (g) {
-          if (cat !== "all" && cat !== g[0]) return;
+        // All: one grid in the library page's order (the Pro items mixed in
+        // near the top, as there); a category: its own group.
+        var groups = cat === "all" ? [["all", ""]] : LIB_GROUPS.filter(function (g) { return g[0] === cat; });
+        var names = {};
+        LIB_GROUPS.forEach(function (g) { names[g[0]] = g[1]; });
+        groups.forEach(function (g) {
           var rows = items.filter(function (t) {
             var cats = String(t.cat || "essential").split(/\s+/);
-            // All: each transition once, under its first category.
-            var inGroup = cat === "all" ? cats[0] === g[0] : cats.indexOf(g[0]) >= 0;
-            return inGroup && (!q || (t.title + " " + (t.desc || "") + " " + g[1]).toLowerCase().indexOf(q) >= 0);
+            var inGroup = g[0] === "all" || cats.indexOf(g[0]) >= 0;
+            var words = t.title + " " + (t.desc || "") + " " + cats.map(function (c) { return names[c] || ""; }).join(" ");
+            return inGroup && (!q || words.toLowerCase().indexOf(q) >= 0);
           });
           if (!rows.length) return;
-          html += '<div class="cmdk-group-label">' + g[1] + '</div><div class="cm-lib-grid">';
+          html += (g[1] ? '<div class="cmdk-group-label">' + g[1] + "</div>" : "") + '<div class="cm-lib-grid">';
           rows.forEach(function (t) {
             var i = shown.length;
             shown.push(t);
