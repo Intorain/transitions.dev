@@ -2025,7 +2025,7 @@
       .site-nav .brand-word { display: none; }
     }
   </style>
-  <link rel="stylesheet" href="assets/nav-products.css?v=3" />
+  <link rel="stylesheet" href="assets/nav-products.css?v=8" />
   <style>
     /* Pill variant of .icon-btn: gains horizontal padding + a label.
        Stays 36px tall, mirrors the .icon-btn fills so it tracks
@@ -2125,6 +2125,24 @@
     }
   </style>
   <link rel="stylesheet" href="assets/community/community.css?v=245" />
+  <style>
+    /* Desktop only (the libraries.dev Studio's notice). */
+    .st-desktop-only { display: none; }
+    @media (max-width: 900px) {
+      .st-desktop-only { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 32px 0 48px; }
+      #st, .st-bar, .st-head { display: none !important; }
+    }
+    .st-locked {
+      width: min(100%, 686px); border-radius: 24px; background: var(--card-bg);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06), var(--card-shadow);
+      padding: 56px 32px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center;
+    }
+    html[data-theme="dark"] .st-locked { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), var(--card-shadow); }
+    .st-lock-glyph { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--chip-bg); color: var(--text); }
+    .st-locked-title { margin: 0; font-family: "Saans", var(--font-sans); font-weight: 500; font-size: 24px; line-height: 1.25; color: var(--text); text-wrap: balance; }
+    .st-locked-sub { margin: 0; max-width: 46ch; font-size: 15px; line-height: 1.65; color: var(--text-muted); }
+    .st-locked .cm-btn { margin-top: 8px; }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -2149,7 +2167,7 @@
               <a class="tl-menu-item nav-products-item" role="menuitem" href="/library.html"><span class="nav-products-name">Library</span><span class="nav-products-hint">Production-ready UI transitions</span></a>
               <a class="tl-menu-item nav-products-item" role="menuitem" href="/builder.html" aria-current="page"><span class="nav-products-name">Builder</span><span class="nav-products-hint">Build components with the AI agent</span></a>
               <a class="tl-menu-item nav-products-item" role="menuitem" href="/agent.html"><span class="nav-products-name">Motion Agent</span><span class="nav-products-hint">Find and fix janky motion in your app</span></a>
-              <a class="tl-menu-item nav-products-item" role="menuitem" href="/skill.html"><span class="nav-products-name">Transitions Motion Skill</span><span class="nav-products-hint">Teach your coding agent the transitions</span></a>
+              <a class="tl-menu-item nav-products-item" role="menuitem" href="/skill.html"><span class="nav-products-name">Motion Skill</span><span class="nav-products-hint">Teach your coding agent the transitions</span></a>
             </div>
           </div>
           <a class="nav-pill" href="/community.html" data-nav="community">Community</a>
@@ -2282,7 +2300,7 @@
           <li><a class="mobile-menu-link mobile-menu-link--1" href="/library.html">Library</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--2" href="/builder.html" aria-current="page">Builder</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--3" href="/agent.html">Motion Agent</a></li>
-          <li><a class="mobile-menu-link mobile-menu-link--4" href="/skill.html">Transitions Motion Skill</a></li>
+          <li><a class="mobile-menu-link mobile-menu-link--4" href="/skill.html">Motion Skill</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--5" href="/community.html">Community</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--6" href="/detail.html?doc=introduction">Docs</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--7 mobile-menu-link--pro" href="/pro.html">Get Pro</a></li>
@@ -2291,6 +2309,18 @@
       </nav>
     </header>
 
+    <!-- Below 900px the Studio has no phone form (agent, live preview and code
+         side by side): a notice instead, as the libraries.dev Studio does. -->
+    <div class="st-desktop-only" role="note">
+      <div class="st-locked">
+        <span class="st-lock-glyph" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/></svg>
+        </span>
+        <h1 class="st-locked-title">Sorry, the Builder is desktop only</h1>
+        <p class="st-locked-sub">The Builder lays out the agent, the live preview and the code side by side, and that needs a wide screen. Open this page on a laptop or desktop to build. Your drafts and credits are already waiting there.</p>
+        <a class="cm-btn cm-btn--primary" href="/library.html">Browse the library</a>
+      </div>
+    </div>
     <section class="st" id="st" aria-label="Studio">
       <div class="st-bar">
         <div class="st-id">
@@ -3054,7 +3084,7 @@
         { group: "Pages", label: "Projects", hint: "Your saved and published components", href: "/projects.html", ic: "grid" },
         { group: "Pages", label: "Studio", hint: "Build or remix a component", href: "/studio.html", ic: "wand" },
         { group: "Pages", label: "Docs", hint: "Introduction, installation, accessibility", href: "/detail.html?doc=introduction", ic: "spark" },
-        { group: "Pages", label: "Transitions Motion Skill", hint: "Agent skill", href: "/skill.html", ic: "spark" },
+        { group: "Pages", label: "Motion Skill", hint: "Agent skill", href: "/skill.html", ic: "spark" },
         { group: "Pages", label: "Transitions Pro", hint: "Pricing", href: "/pro.html", ic: "pro" }
       ].concat(TRANSITION_NAMES.map(function (n) {
         var slug = n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -3248,12 +3278,12 @@
     })();
   </script>
   <!-- Pro platform client: wires Get access / Sign in / account state to the API. -->
-  <script src="assets/pro-client.js?v=67" defer></script>
+  <script src="assets/pro-client.js?v=70" defer></script>
 
   <script src="assets/community/community.js?v=244" defer></script>
   <script src="assets/community/controls.js?v=140" defer></script>
   <script src="assets/community/studio.js?v=240" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
-  <script src="assets/nav-products.js?v=7" defer></script>
+  <script src="assets/nav-products.js?v=10" defer></script>
 </body>
 </html>

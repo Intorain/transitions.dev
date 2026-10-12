@@ -426,7 +426,9 @@
     // rest stay hidden and come back when the row widens.
     var grid = document.getElementById("home-community-grid");
     function fit() {
-      var cols = getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
+      // Phones swipe through five (index.html); wider screens show one row.
+      var phone = window.matchMedia && matchMedia("(max-width: 720px)").matches;
+      var cols = phone ? 5 : getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
       Array.prototype.forEach.call(grid.children, function (el, i) { el.hidden = i >= cols; });
     }
     C.api.feed("popular", 0).then(function (r) {

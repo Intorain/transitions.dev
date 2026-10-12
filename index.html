@@ -6129,7 +6129,7 @@
       .nav-pill { padding: 0 9px; }
     }
   </style>
-  <link rel="stylesheet" href="assets/nav-products.css?v=3" />
+  <link rel="stylesheet" href="assets/nav-products.css?v=8" />
   <link rel="stylesheet" href="assets/community/community.css?v=245" />
   <style>
     /* ─── Homepage layout ──────────────────────────────────────────
@@ -6155,8 +6155,38 @@
     /* Community: one row, a See more button beside the lead. */
     .home-community { width: 100%; margin: 96px 0; }
     .cards-browse { flex: none; height: 36px; }
+    /* Phones: no category pills (one card shows anyway); Browse all takes
+       their place, on the left. */
+    @media (max-width: 720px) {
+      #cards-toolbar .cards-filters { display: none; }
+      #cards-toolbar { justify-content: flex-start; }
+      /* Five cards in a row you swipe through; each a bit narrower than the
+         screen so the next one shows at the right edge. */
+      #components {
+        display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory; scroll-padding-inline: 20px;
+        align-self: stretch; width: auto; max-width: none; margin: 0 -20px; padding: 0 20px 4px;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      }
+      #components::-webkit-scrollbar { display: none; }
+      #components > .card { flex: 0 0 82%; scroll-snap-align: start; }
+      /* The Community row swipes the same way. */
+      #home-community-grid {
+        display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory; scroll-padding-inline: 20px;
+        align-self: stretch; width: auto; max-width: none; margin: 0 -20px; padding: 0 20px 4px;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      }
+      #home-community-grid::-webkit-scrollbar { display: none; }
+      #home-community-grid > .card { flex: 0 0 82%; margin-bottom: 0; scroll-snap-align: start; }
+    }
     @media (max-width: 720px) { .home-community { margin: 64px 0; } }
     .home-section-head--row { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+    .home-section-head--row .skill-btn { flex: none; height: 36px; }
+    /* Phones: the button under the lead, as Browse all sits in the library. */
+    @media (max-width: 720px) {
+      .home-section-head--row { flex-direction: column; align-items: flex-start; gap: 24px; }
+    }
     .home-community-row { grid-template-rows: auto; }
   </style>
 </head>
@@ -6183,7 +6213,7 @@
               <a class="tl-menu-item nav-products-item" role="menuitem" href="/library.html"><span class="nav-products-name">Library</span><span class="nav-products-hint">Production-ready UI transitions</span></a>
               <a class="tl-menu-item nav-products-item" role="menuitem" href="/builder.html"><span class="nav-products-name">Builder</span><span class="nav-products-hint">Build components with the AI agent</span></a>
               <a class="tl-menu-item nav-products-item" role="menuitem" href="/agent.html"><span class="nav-products-name">Motion Agent</span><span class="nav-products-hint">Find and fix janky motion in your app</span></a>
-              <a class="tl-menu-item nav-products-item" role="menuitem" href="/skill.html"><span class="nav-products-name">Transitions Motion Skill</span><span class="nav-products-hint">Teach your coding agent the transitions</span></a>
+              <a class="tl-menu-item nav-products-item" role="menuitem" href="/skill.html"><span class="nav-products-name">Motion Skill</span><span class="nav-products-hint">Teach your coding agent the transitions</span></a>
             </div>
           </div>
           <a class="nav-pill" href="/community.html" data-nav="community">Community</a>
@@ -6315,7 +6345,7 @@
           <li><a class="mobile-menu-link mobile-menu-link--1" href="/library.html">Library</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--2" href="/builder.html">Builder</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--3" href="/agent.html">Motion Agent</a></li>
-          <li><a class="mobile-menu-link mobile-menu-link--4" href="/skill.html">Transitions Motion Skill</a></li>
+          <li><a class="mobile-menu-link mobile-menu-link--4" href="/skill.html">Motion Skill</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--5" href="/community.html">Community</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--6" href="/detail.html?doc=introduction">Docs</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--7 mobile-menu-link--pro" href="/pro.html">Get Pro</a></li>
@@ -14308,7 +14338,7 @@ export function Surface({ open, children }) {
         { group: "Pages", label: "Projects", hint: "Your saved and published components", href: "/projects.html", ic: "grid" },
         { group: "Pages", label: "Studio", hint: "Build or remix a component", href: "/studio.html", ic: "wand" },
         { group: "Pages", label: "Docs", hint: "Introduction, installation, accessibility", href: "/detail.html?doc=introduction", ic: "spark" },
-        { group: "Pages", label: "Transitions Motion Skill", hint: "Agent skill", href: "/skill.html", ic: "spark" },
+        { group: "Pages", label: "Motion Skill", hint: "Agent skill", href: "/skill.html", ic: "spark" },
         { group: "Pages", label: "Transitions Pro", hint: "Pricing", href: "/pro.html", ic: "pro" }
       ].concat(TRANSITION_ITEMS.map(function (it) {
         return {
@@ -14488,7 +14518,11 @@ if (!toolbar || !grid) return;
 var cards = Array.prototype.slice.call(grid.querySelectorAll(".card[data-seq]"));
 var tabs = Array.prototype.slice.call(toolbar.querySelectorAll(".cards-filter"));
 /* One full row of the full-width grid: as many cards as it has columns. */
-function peekCount() { return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length); }
+function peekCount() {
+  // Phones swipe through five; wider screens show one full row.
+  if (window.matchMedia && matchMedia("(max-width: 720px)").matches) return 5;
+  return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length);
+}
 var PEEK = peekCount();
 var curKey = "all", curMode = "default";
 window.addEventListener("resize", function () { var n = peekCount(); if (n !== PEEK) { PEEK = n; applyPeek(); } });
@@ -15698,12 +15732,12 @@ btn.textContent = STATES[i].label;
 })();
 </script>
   <!-- Pro platform client: mounts Pro badges on data-pro cards, reads auth state. -->
-  <script src="assets/pro-client.js?v=67" defer></script>
+  <script src="assets/pro-client.js?v=70" defer></script>
   <script src="assets/community/community.js?v=244" defer></script>
   <script src="assets/community/beam.js?v=140" defer></script>
-  <script src="assets/community/feed.js?v=151" defer></script>
+  <script src="assets/community/feed.js?v=152" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
-  <script src="assets/nav-products.js?v=7" defer></script>
+  <script src="assets/nav-products.js?v=10" defer></script>
 </body>
 </html>
 

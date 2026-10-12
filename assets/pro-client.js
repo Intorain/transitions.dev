@@ -301,6 +301,90 @@
       .catch(function () { return state; });
   }
 
+  // ── Mobile menu: the desktop ⋮ / avatar menu's parts ───────────────────────
+  // Signed in, an Account group (Profile, Projects, Account) joins the list
+  // and the bottom button signs out; signed out, it signs in. An Appearance
+  // row (Light / Dark / System) sits above the button either way.
+  function injectMobileMenuStyle() {
+    if (document.getElementById("mobile-menu-extra")) return;
+    var st = document.createElement("style");
+    st.id = "mobile-menu-extra";
+    st.textContent =
+      // The menu scrolls when it is taller than the screen; its parts keep
+      // their own height (the 44px button was squeezed to its text).
+      ".mobile-menu{overflow-y:auto;overscroll-behavior:contain}.mobile-menu>*{flex-shrink:0}" +
+      ".mobile-menu-list .mobile-menu-group--account{margin-top:8px}" +
+      ".mobile-menu-theme{margin-top:auto;padding-top:24px;display:flex;" +
+      "opacity:0;transform:translateY(12px);filter:blur(3px)}" +
+      ".mobile-menu-theme+.mobile-menu-cta{margin-top:16px}" +
+      ".mobile-menu-theme-opts{flex:1;display:flex;gap:2px;padding:3px;border-radius:48px;background:rgba(0,0,0,.04)}" +
+      'html[data-theme="dark"] .mobile-menu-theme-opts{background:rgba(255,255,255,.07)}' +
+      ".mobile-menu-theme-opts button{flex:1;height:34px;padding:0 12px;border:0;border-radius:48px;background:transparent;color:var(--text-muted);" +
+      "font:500 13px/1 var(--font-sans);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background-color .15s ease,color .15s ease}" +
+      '.mobile-menu-theme-opts button[aria-pressed="true"]{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04)}' +
+      'html[data-theme="dark"] .mobile-menu-theme-opts button[aria-pressed="true"]{background:rgba(255,255,255,.12);box-shadow:none}' +
+      "body.menu-open .mobile-menu-theme{opacity:1;transform:none;filter:none;transition:opacity .5s cubic-bezier(.22,1,.36,1) 120ms,transform .5s cubic-bezier(.22,1,.36,1) 120ms,filter .5s cubic-bezier(.22,1,.36,1) 120ms}" +
+      "body.menu-closing .mobile-menu-theme{opacity:0;transform:none;filter:none;transition:opacity .2s ease}" +
+      "@media (prefers-reduced-motion:reduce){.mobile-menu-theme{transform:none!important;filter:none!important;transition:opacity .2s linear!important}}";
+    document.head.appendChild(st);
+  }
+  function themePref() { try { return localStorage.getItem("tdev:theme") || "system"; } catch (e) { return "system"; } }
+  function setThemePref(pref) {
+    // The page's own Appearance options keep their label in step; pages
+    // without them get the same storage and attribute directly.
+    var opt = document.querySelector('.pm-theme-opt[data-theme-pref="' + pref + '"]');
+    if (opt) { opt.click(); return; }
+    try { if (pref === "system") localStorage.removeItem("tdev:theme"); else localStorage.setItem("tdev:theme", pref); } catch (e) {}
+    var dark = pref === "dark" || (pref === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    if (dark) document.documentElement.setAttribute("data-theme", "dark"); else document.documentElement.removeAttribute("data-theme");
+  }
+  function mountMobileTheme() {
+    var menu = document.getElementById("mobile-menu");
+    var cta = document.getElementById("mobile-signin");
+    if (!menu || document.getElementById("mobile-theme")) return;
+    injectMobileMenuStyle();
+    var row = document.createElement("div");
+    row.className = "mobile-menu-theme";
+    row.id = "mobile-theme";
+    row.setAttribute("role", "group");
+    row.setAttribute("aria-label", "Appearance");
+    row.innerHTML = '<span class="mobile-menu-theme-opts">' +
+      [["light", "Light"], ["dark", "Dark"], ["system", "System"]].map(function (o) {
+        return '<button type="button" data-pref="' + o[0] + '" aria-pressed="false">' + o[1] + "</button>";
+      }).join("") + "</span>";
+    if (cta) menu.insertBefore(row, cta); else menu.appendChild(row);
+    function paint() {
+      var cur = themePref();
+      row.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-pref") === cur)); });
+    }
+    row.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-pref]");
+      if (!b) return;
+      setThemePref(b.getAttribute("data-pref"));
+      paint();
+    });
+    paint();
+  }
+  function paintMobileAccount() {
+    var list = document.querySelector("#mobile-menu .mobile-menu-list");
+    var cta = document.getElementById("mobile-signin");
+    if (cta) cta.textContent = state.authenticated ? "Sign out" : "Sign in";
+    if (!list) return;
+    var group = document.getElementById("mobile-account-group");
+    if (!state.authenticated) {
+      if (group) list.querySelectorAll("[data-mobile-account]").forEach(function (el) { el.remove(); });
+      return;
+    }
+    if (group) return;
+    injectMobileMenuStyle();
+    var n = list.querySelectorAll(".mobile-menu-link").length;
+    var html = '<li class="mobile-menu-group mobile-menu-group--account" id="mobile-account-group" data-mobile-account aria-hidden="true">Account</li>';
+    [["Profile", "/profile.html"], ["Projects", "/projects.html"], ["Account", "/account.html"]].forEach(function (it, i) {
+      html += '<li data-mobile-account><a class="mobile-menu-link mobile-menu-link--' + (n + i + 1) + '" href="' + it[1] + '">' + it[0] + "</a></li>";
+    });
+    list.insertAdjacentHTML("beforeend", html);
+  }
+
   function paintAuth() {
     // 3-dot menu: "Sign in" becomes "Account", and while authenticated a
     // "Sign out" item closes the menu, after a divider (Figma: profile under the ⋮ menu).
@@ -416,6 +500,7 @@
       // Entitled: nothing left to sell and the avatar covers the account.
       getPro.style.display = entitled ? "none" : "";
     }
+    paintMobileAccount();
     // Same swap in the mobile menu.
     var mobilePro = document.querySelector(".mobile-menu-link--pro");
     if (mobilePro) {
@@ -1621,10 +1706,14 @@
     if (mobileSignin) {
       mobileSignin.addEventListener("click", function (e) {
         e.preventDefault();
-        if (state.authenticated) location.href = "account.html";
-        else signIn();
+        if (state.authenticated) {
+          logout(false).then(function () {
+            if (/\/(account|projects|profile)(\.html)?$/.test(location.pathname)) location.href = "/";
+          });
+        } else signIn();
       });
     }
+    mountMobileTheme();
     // Paint the cached (optimistic) auth state first so the nav doesn't flash
     // "Get Pro" before /me answers. `resolved` stays false, so nothing that
     // needs a confirmed answer treats this as authoritative.
