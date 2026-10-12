@@ -931,7 +931,7 @@
   // locked ("Available with Pro & Business"); their code is paid content.
   var proP = null;
   function proLibrary() {
-    if (!proP) proP = fetch("assets/community/library-pro.json?v=1").then(function (r) { return r.json(); }).catch(function () { proP = null; return []; });
+    if (!proP) proP = fetch("assets/community/library-pro.json?v=2").then(function (r) { return r.json(); }).catch(function () { proP = null; return []; });
     return proP;
   }
   function hasProPlan() { return !!(window.TransitionsPro && TransitionsPro.state && TransitionsPro.state.pro); }
@@ -976,7 +976,15 @@
 
     function paint() {
       Promise.all([library(), hasProPlan() ? [] : proLibrary()]).then(function (res) {
-        var items = res[0].concat(res[1].map(function (t) { return Object.assign({ locked: true }, t); }));
+        // Pro items go where the library page shows them: right after the
+        // card before them there ("after"), else at the end.
+        var items = res[0].slice();
+        res[1].forEach(function (t) {
+          var at = -1;
+          for (var k = 0; k < items.length; k++) if (items[k].slug === t.after) { at = k; break; }
+          var row = Object.assign({ locked: true }, t);
+          if (at < 0) items.push(row); else items.splice(at + 1, 0, row);
+        });
         var q = input.value.trim().toLowerCase();
         shown = [];
         var html = "";
