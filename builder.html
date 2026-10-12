@@ -2124,7 +2124,8 @@
       .nav-pill { padding: 0 9px; }
     }
   </style>
-  <link rel="stylesheet" href="assets/community/community.css?v=240" />
+  <link rel="stylesheet" href="assets/ui-generation/ui-generation.css?v=1" />
+  <link rel="stylesheet" href="assets/community/community.css?v=241" />
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -2365,16 +2366,11 @@
       <h2 class="ub-heading" id="ub-title">An agent built for UI motion &amp; craft</h2>
       <p class="ub-lede">Most AI tools stop at a layout. This one keeps going: every state, every motion, every detail that makes it feel finished.</p>
       <div class="ub-grid">
-        <div class="ub-card ub-card--tall">
+        <div class="ub-card ub-card--tall" data-ub-generate>
           <h3 class="ub-title">Real patterns, not guesses</h3>
           <p class="ub-desc">Built on the transitions.dev library: <span class="dim">the same tokens, easings and reduced-motion fallbacks that ship in production.</span></p>
-          <!-- Library cards scattered off the edges, as in the Pro page's "Full library access" card. -->
-          <div class="ub-scatter" aria-hidden="true">
-            <span class="ub-mini" style="left:-148px; top:299px"><span class="ub-mini-stage"><img class="is-light" src="assets/community/thumbs/card-resize.jpg?v=2" alt="" loading="lazy" /><img class="is-dark" src="assets/community/thumbs/card-resize-dark.jpg?v=2" alt="" loading="lazy" /></span></span>
-            <span class="ub-mini" style="left:99px; top:174px"><span class="ub-mini-stage"><img class="is-light" src="assets/community/thumbs/number-pop-in.jpg?v=2" alt="" loading="lazy" /><img class="is-dark" src="assets/community/thumbs/number-pop-in-dark.jpg?v=2" alt="" loading="lazy" /></span></span>
-            <span class="ub-mini" style="left:346px; top:285px"><span class="ub-mini-stage"><img class="is-light" src="assets/community/thumbs/text-states-swap.jpg?v=2" alt="" loading="lazy" /><img class="is-dark" src="assets/community/thumbs/text-states-swap-dark.jpg?v=2" alt="" loading="lazy" /></span></span>
-            <span class="ub-mini" style="left:99px; top:395.5px"><span class="ub-mini-stage"><img class="is-light" src="assets/community/thumbs/tabs-sliding.jpg?v=2" alt="" loading="lazy" /><img class="is-dark" src="assets/community/thumbs/tabs-sliding-dark.jpg?v=2" alt="" loading="lazy" /></span></span>
-          </div>
+          <!-- A Community component (Event Card With Attendees) generating on a loop, with the transitions-ui-generation skill (assets/community/ub-generate.js). -->
+          <div class="ub-gen" aria-hidden="true" inert></div>
         </div>
 
         <div class="ub-card ub-card--tall">
@@ -3129,5 +3125,6 @@
   <script src="assets/community/feed.js?v=150" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
   <script src="assets/nav-products.js?v=7" defer></script>
+  <script type="module" src="assets/community/ub-generate.js?v=3"></script>
 </body>
 </html>
