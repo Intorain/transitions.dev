@@ -2125,7 +2125,27 @@
     }
   </style>
   <link rel="stylesheet" href="assets/ui-generation/ui-generation.css?v=1" />
-  <link rel="stylesheet" href="assets/community/community.css?v=241" />
+  <link rel="stylesheet" href="assets/community/community.css?v=242" />
+  <style>
+/* "Real patterns" card: a Community component generating on a loop
+   (assets/community/ub-generate.js). The component sits under the copy,
+   its bottom running off the card. */
+.ub-gen { position: absolute; left: 0; right: 0; top: 196px; display: flex; justify-content: center; pointer-events: none; }
+.ub-gen-host { pointer-events: auto; }
+.ub-gen-host {
+  --stage-bg: #f6f6f6; --stage-fg: #0d0d0d; --stage-muted: #6c6c6c; --stage-border: rgba(0, 0, 0, .08);
+  --stage-surface: #fff; --stage-accent: #17181c; --stage-on-accent: #fff;
+  font: 400 13px/20px var(--font-sans, Inter, system-ui, sans-serif); color: var(--stage-fg);
+}
+.ub-gen-host[data-theme="dark"] {
+  --stage-bg: #141414; --stage-fg: #f2f2f2; --stage-muted: rgba(202, 202, 202, .7); --stage-border: rgba(255, 255, 255, .08);
+  --stage-surface: #1d1d1d; --stage-accent: #fff; --stage-on-accent: #0d0d0d;
+}
+/* The skill's drawing, quieter than its default: lighter lines and dots,
+   handles filled with the card's own gray, and under the site nav. */
+.t-gen.is-quiet { z-index: 5; --gen-line: #c9c9c9; --gen-strong: #a9a9a9; --gen-ink: rgba(13, 13, 13, .13); --gen-surface: #f6f6f6; }
+html[data-theme="dark"] .t-gen.is-quiet { --gen-line: #3f3f3f; --gen-strong: #616161; --gen-ink: rgba(245, 245, 245, .12); --gen-surface: #141414; }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -2370,7 +2390,7 @@
           <h3 class="ub-title">Real patterns, not guesses</h3>
           <p class="ub-desc">Built on the transitions.dev library: <span class="dim">the same tokens, easings and reduced-motion fallbacks that ship in production.</span></p>
           <!-- A Community component (Event Card With Attendees) generating on a loop, with the transitions-ui-generation skill (assets/community/ub-generate.js). -->
-          <div class="ub-gen" aria-hidden="true" inert></div>
+          <div class="ub-gen"></div>
         </div>
 
         <div class="ub-card ub-card--tall">
@@ -3125,6 +3145,6 @@
   <script src="assets/community/feed.js?v=150" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
   <script src="assets/nav-products.js?v=7" defer></script>
-  <script type="module" src="assets/community/ub-generate.js?v=3"></script>
+  <script type="module" src="assets/community/ub-generate.js?v=5"></script>
 </body>
 </html>
