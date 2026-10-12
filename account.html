@@ -4791,6 +4791,8 @@
 
     /* Downloads agent block */
     .account-agent { margin-top: 32px; }
+    .acc-mcp-label { margin: 14px 0 6px; font-size: 13px; font-weight: 500; color: var(--text); }
+    .acc-mcp-label span { margin-left: 6px; font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--text-muted, #6c6c6c); }
     .account-agent-title { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--text); }
     .account-agent-sub { margin: 0 0 12px; font-size: 13px; line-height: 1.55; color: var(--text-muted, #6c6c6c); max-width: 620px; text-wrap: pretty; }
     /* Matches the install-page command block (.skill-code-row in
@@ -5242,6 +5244,37 @@
               </button>
             </div>
             <p class="skill-section-note" id="acc-agent-plan"></p>
+          </div>
+          <!-- Transitions UI MCP (Pro, Business): the Builder's agent in the
+               person's own Claude Code, Codex or Cursor. Commands carry their key. -->
+          <div class="account-agent" id="acc-mcp-block" hidden>
+            <p class="account-agent-title">Transitions UI in Claude Code, Codex and Cursor</p>
+            <p class="account-agent-sub">Your AI builds components with the Transitions UI Agent's rules, recipes and motion check, on your own AI plan, and can save them to your Studio. Add it once:</p>
+            <p class="acc-mcp-label">Claude Code</p>
+            <div class="skill-code-row">
+              <code id="acc-mcp-claude"></code>
+              <button type="button" class="card-copy" aria-label="Copy Claude Code command" data-copy-target="#acc-mcp-claude">
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </button>
+            </div>
+            <p class="acc-mcp-label">Codex <span>~/.codex/config.toml</span></p>
+            <div class="skill-code-row">
+              <code id="acc-mcp-codex"></code>
+              <button type="button" class="card-copy" aria-label="Copy Codex config" data-copy-target="#acc-mcp-codex">
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </button>
+            </div>
+            <p class="acc-mcp-label">Cursor <span>.cursor/mcp.json</span></p>
+            <div class="skill-code-row">
+              <code id="acc-mcp-cursor"></code>
+              <button type="button" class="card-copy" aria-label="Copy Cursor config" data-copy-target="#acc-mcp-cursor">
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </button>
+            </div>
+            <p class="skill-section-note">Then ask it to build or polish a component, for example: "Build a pricing toggle with Transitions UI and save it to my Studio." Keep the key private: it is tied to your account.</p>
           </div>
           <p class="account-note" id="acc-note-dl" role="status" hidden></p>
         </section>
@@ -6608,6 +6641,14 @@
               ? "Full Motion Agent: 200 hosted fixes a month, polish + revamp."
               : "Free Motion Agent: 10 hosted polish fixes a month" + (d.pro ? ", plus Pro recipe sources over MCP." : ".");
             el("acc-agent-key-block").hidden = false;
+            // Transitions UI MCP: Pro and Business only.
+            if (d.pro || d.plan === "team") {
+              var url = "https://api.transitions.dev/ui/mcp";
+              el("acc-mcp-claude").textContent = 'claude mcp add --transport http transitions-ui ' + url + ' --header "Authorization: Bearer ' + d.license + '"';
+              el("acc-mcp-codex").textContent = '[mcp_servers.transitions-ui]\ncommand = "npx"\nargs = ["-y", "mcp-remote", "' + url + '", "--header", "Authorization:${TRANSITIONS_AUTH}"]\nenv = { TRANSITIONS_AUTH = "Bearer ' + d.license + '" }';
+              el("acc-mcp-cursor").textContent = JSON.stringify({ mcpServers: { "transitions-ui": { url: url, headers: { Authorization: "Bearer " + d.license } } } }, null, 2);
+              el("acc-mcp-block").hidden = false;
+            }
           })
           .catch(function () { /* optional block, stays hidden */ });
       })();
