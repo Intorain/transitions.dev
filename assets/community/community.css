@@ -2383,6 +2383,18 @@ html[data-theme="dark"] .cm-lib-thumb img.is-dark { display: block; }
 /* Hover and keyboard highlight: 1% black (1% white in dark). */
 .cm-lib .cm-lib-item:hover, .cm-lib .cm-lib-item[data-active="true"] { background: rgba(0, 0, 0, 0.01); }
 html[data-theme="dark"] .cm-lib .cm-lib-item:hover, html[data-theme="dark"] .cm-lib .cm-lib-item[data-active="true"] { background: rgba(255, 255, 255, 0.01); }
+/* Pro transitions for free accounts: shown, locked. The thumbnail dims and
+   the tooltip (the site's .t-tt bubble) says where they are available; it
+   shows on hover and on the keyboard highlight. */
+.cm-lib .cm-lib-item.is-locked { cursor: default; }
+.cm-lib .cm-lib-item.is-locked:hover, .cm-lib .cm-lib-item.is-locked[data-active="true"] { background: none; }
+.cm-lib-item.is-locked .cm-lib-thumb img { opacity: 0.45; }
+.cm-lib-item.is-locked .cm-lib-name { color: var(--text-muted); }
+.cm-lib-tip.t-tt { top: 50%; left: 50%; z-index: 1; width: max-content; translate: -50% -50%; transform-origin: 50% 50%; }
+.cm-lib-item.is-locked:hover .cm-lib-tip, .cm-lib-item.is-locked[data-active="true"] .cm-lib-tip, .cm-lib-item.is-locked:focus-visible .cm-lib-tip {
+  opacity: 1; scale: 1;
+  transition: opacity var(--tt-in-dur) var(--tt-in-ease) var(--tt-delay), scale var(--tt-in-dur) var(--tt-in-ease) var(--tt-delay);
+}
 
 /* Confirm / prompt (C.confirm, C.ask). */
 .cm-ask-card { max-width: 380px; padding: 20px; gap: 10px; }

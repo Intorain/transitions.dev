@@ -4,6 +4,7 @@
 // light and dark. Writes assets/community/thumbs/<slug>.jpg and
 // <slug>-dark.jpg at 2x (592 x 520) for sharp retina screens. The demo's own
 // controls (Animate, Toggle, Play) are hidden: the picker shows the component.
+// The Pro transitions get thumbnails too (assets/community/library-pro.json).
 //
 // Needs the site served locally and playwright-core with a Chrome install:
 //   python3 -m http.server 8123          (in the repo root, another terminal)
@@ -22,7 +23,17 @@ const CHROME = process.env.CHROME || "/Applications/Google Chrome.app/Contents/M
 const out = join(root, "assets/community/thumbs");
 mkdirSync(out, { recursive: true });
 
-const items = JSON.parse(readFileSync(join(root, "assets/community/library.json"), "utf8"));
+// The free transitions by their copy key, the Pro ones (locked in the
+// picker for free accounts) by their Pro id. ONLY=pro captures just those.
+const free = JSON.parse(readFileSync(join(root, "assets/community/library.json"), "utf8"))
+  .map((t) => ({ slug: t.slug, sel: `.card:has([data-copy-key="${t.key}"]) .card-stage` }));
+const pro = JSON.parse(readFileSync(join(root, "assets/community/library-pro.json"), "utf8"))
+  .map((t) => ({ slug: t.slug, sel: `.card[data-pro-id="${t.slug}"] .card-stage`, pro: true }));
+// ms after pressing the demo's own button, for demos that only show
+// something while they play.
+const PLAY = { "confetti-burst": 420, "organic-shimmer": 900 };
+const only = process.env.ONLY ? process.env.ONLY.split(",") : null; // "pro", or slugs
+const items = !only ? free.concat(pro) : only[0] === "pro" ? pro : free.concat(pro).filter((t) => only.includes(t.slug));
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
 
 for (const theme of ["light", "dark"]) {
@@ -31,15 +42,21 @@ for (const theme of ["light", "dark"]) {
   const page = await ctx.newPage();
   await page.goto(SITE + "/library.html", { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
-  await page.addStyleTag({ content: ".card-stage .btn-animate { visibility: hidden !important; }" });
+  await page.addStyleTag({ content: ".card-stage:not(.thumb-keep) .btn-animate { visibility: hidden !important; }" });
   await page.mouse.move(2, 2);
   let n = 0;
   for (const t of items) {
-    const stage = page.locator(`.card:has([data-copy-key="${t.key}"]) .card-stage`).first();
-    if (!(await stage.count())) { console.warn("no card for", t.key, t.slug); continue; }
+    const stage = page.locator(t.sel).first();
+    if (!(await stage.count())) { console.warn("no card for", t.slug); continue; }
     await stage.scrollIntoViewIfNeeded();
     await page.mouse.move(2, 2);
-    await page.waitForTimeout(500);
+    // A Pro demo's button can be the component itself (Confetti burst), and
+    // some draw a beat later (Organic shimmer): show its buttons, wait longer.
+    await page.evaluate(([sel, on]) => { const el = document.querySelector(sel); if (el) el.classList.toggle("thumb-keep", on); }, [t.sel, !!t.pro]);
+    await page.waitForTimeout(t.pro ? 2000 : 500);
+    // Demos that rest as a bare button or an empty box are caught mid-play.
+    const play = PLAY[t.slug];
+    if (play) { await stage.locator(".btn-animate").first().click(); await page.mouse.move(2, 2); await page.waitForTimeout(play); }
     await stage.screenshot({ path: join(out, t.slug + (theme === "dark" ? "-dark" : "") + ".jpg"), type: "jpeg", quality: 90 });
     n++;
   }

@@ -927,12 +927,21 @@
     if (!libP) libP = fetch("assets/community/library.json?v=5").then(function (r) { return r.json(); }).catch(function () { libP = null; return []; });
     return libP;
   }
+  // The Pro transitions, by name only: free accounts see them in the picker,
+  // locked ("Available with Pro & Business"); their code is paid content.
+  var proP = null;
+  function proLibrary() {
+    if (!proP) proP = fetch("assets/community/library-pro.json?v=1").then(function (r) { return r.json(); }).catch(function () { proP = null; return []; });
+    return proP;
+  }
+  function hasProPlan() { return !!(window.TransitionsPro && TransitionsPro.state && TransitionsPro.state.pro); }
   function thumbUrl(slug, dark) {
     // ?v= changes when the thumbnails are rebuilt (now 2x, without demo buttons).
     return "assets/community/thumbs/" + encodeURIComponent(slug) + (dark ? "-dark" : "") + ".jpg?v=2";
   }
   var CLOSE_SVG = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  // The homepage's categories (Pro transitions are not remixable).
+  // The homepage's categories (Pro transitions are not remixable; free
+  // accounts see them locked).
   var LIB_GROUPS = [["essential", "Essential"], ["ai", "AI Agents"], ["effects", "Effects"], ["texts", "Texts"]];
   var picker = null;
   function buildPicker() {
@@ -966,7 +975,8 @@
     var shown = [], active = 0, done = null, last = null, cat = "all";
 
     function paint() {
-      library().then(function (items) {
+      Promise.all([library(), hasProPlan() ? [] : proLibrary()]).then(function (res) {
+        var items = res[0].concat(res[1].map(function (t) { return Object.assign({ locked: true }, t); }));
         var q = input.value.trim().toLowerCase();
         shown = [];
         var html = "";
@@ -983,8 +993,10 @@
           rows.forEach(function (t) {
             var i = shown.length;
             shown.push(t);
-            html += '<button type="button" class="cmdk-item cm-lib-item" role="option" data-i="' + i + '" data-active="' + (i === active) + '">' +
+            html += '<button type="button" class="cmdk-item cm-lib-item' + (t.locked ? " is-locked" : "") + '" role="option" data-i="' + i + '" data-active="' + (i === active) + '"' +
+              (t.locked ? ' aria-disabled="true" aria-describedby="cm-lib-pro-note"' : "") + ">" +
               '<span class="cm-lib-thumb">' +
+                (t.locked ? '<span class="t-tt cm-lib-tip" aria-hidden="true">Available with Pro &amp; Business</span>' : "") +
                 '<img class="is-light" src="' + thumbUrl(t.slug) + '" alt="" width="296" height="260" loading="lazy" decoding="async" />' +
                 '<img class="is-dark" src="' + thumbUrl(t.slug, true) + '" alt="" width="296" height="260" loading="lazy" decoding="async" />' +
               "</span>" +
@@ -994,7 +1006,8 @@
           html += "</div>";
         });
         if (active >= shown.length) active = 0;
-        list.innerHTML = html || '<div class="cmdk-empty">No transitions match</div>';
+        list.innerHTML = (html || '<div class="cmdk-empty">No transitions match</div>') +
+          '<span id="cm-lib-pro-note" hidden>Available with Pro and Business</span>';
       });
     }
     function setActive(i, scroll) {
@@ -1039,7 +1052,7 @@
       else if (e.key === "ArrowLeft") { e.preventDefault(); setActive(active - 1, true); }
       else if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + cols(), true); }
       else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - cols(), true); }
-      else if (e.key === "Enter") { e.preventDefault(); if (shown[active]) close(shown[active]); }
+      else if (e.key === "Enter") { e.preventDefault(); if (shown[active] && !shown[active].locked) close(shown[active]); }
     });
     overlay.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(null); }
@@ -1047,7 +1060,7 @@
     overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) close(null); });
     list.addEventListener("click", function (e) {
       var b = e.target.closest(".cm-lib-item");
-      if (b) close(shown[+b.getAttribute("data-i")] || null);
+      if (b && !b.classList.contains("is-locked")) close(shown[+b.getAttribute("data-i")] || null);
     });
     list.addEventListener("mousemove", function (e) {
       var b = e.target.closest(".cm-lib-item");
