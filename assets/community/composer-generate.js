@@ -7,7 +7,7 @@
 // The page hides the box before its first paint (html.cm-gen-pending, set in
 // <head> unless the visitor prefers reduced motion), so it never shows and
 // then vanishes for the drawing.
-import { generate } from "../ui-generation/ui-generation.js?v=4";
+import { generate } from "../ui-generation/ui-generation.js?v=5";
 
 const root = document.documentElement;
 const box = document.getElementById("cm-beam");

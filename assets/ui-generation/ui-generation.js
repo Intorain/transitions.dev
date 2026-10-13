@@ -468,6 +468,9 @@ export function generate(el, options = {}) {
       }
       catch (e) { if (el.__tGenLayer) el.__tGenLayer.remove(); G = null; console.warn("UIGeneration: could not build the overlay, showing the element", e); return finish(); }
       const D = Math.max(400, +opts.duration || DEFAULTS.duration), t0 = performance.now();
+      // The overlay is on the page now, fully drawn; put it in its first pose before the browser
+      // paints, or one frame shows the finished wireframe before the drawing starts.
+      frame(G, 0, 0, D);
       const tick = (now) => {
         if (stopped) return;
         const t = now - t0, p = t / D;
