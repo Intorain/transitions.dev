@@ -718,8 +718,9 @@
     // Public: published, approved by a reviewer (review is only sent to the
     // author; others only ever get approved work) and not hidden.
     var live = c.published && !c.hidden && (!c.review || c.review === "approved");
+    // The author's name is the link (darker than "by"; underlines on hover).
     var subHtml = !opts.hideAuthor && a.handle && live
-      ? '<a class="card-subtitle cm-sub" href="' + esc(profileUrl(a.handle)) + '">' + esc(sub) + "</a>"
+      ? '<div class="card-subtitle cm-sub">by <a class="cm-sub-name" href="' + esc(profileUrl(a.handle)) + '">' + esc(a.display_name || a.handle) + "</a></div>"
       : '<div class="card-subtitle cm-sub">' + esc(sub) + "</div>";
     // Status and the AI Act label, top left over the preview.
     var badges = [];

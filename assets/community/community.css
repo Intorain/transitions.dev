@@ -666,12 +666,17 @@ html[data-theme="dark"] .cm-badge--warn { background: rgba(234, 88, 12, 0.16); c
 .cm-meta { width: calc(100% - 2 * var(--card-pad-x) - 64px); }
 a.card-title, a.card-subtitle { text-decoration: none; }
 .cm-title, .cm-sub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Room below the line for descenders (the ellipsis clip cut the "y" in
+   "by"), without moving the card's layout. */
+.cm-sub { padding-bottom: 3px; margin-bottom: -3px; }
 /* Like a library card: the whole card is the click target, the title does
    not underline; the author link still does. */
 .card.cm-card { cursor: pointer; }
 .card.cm-card:focus-visible { outline: 2px solid var(--text-muted); outline-offset: 2px; }
 a.cm-title { color: inherit; }
-a.cm-sub:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* The author: the name is the link, in the title's color; it underlines on hover. */
+.cm-sub-name { color: var(--text); text-decoration: none; }
+.cm-sub-name:hover { text-decoration: underline; text-underline-offset: 2px; }
 .cm-views {
   position: absolute;
   right: var(--card-pad-x);
