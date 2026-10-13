@@ -159,6 +159,10 @@
 
     /* Agent band: the same stat cells, with a 30-day fixes chart. */
     .stats--agent { border-bottom: 1px solid var(--c-line); }
+    /* Builder band: two rows of four. */
+    .stats--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .stats--four .stat:nth-child(4n) { border-right: none; }
+    .stats--four .stat:nth-child(-n+4) { border-bottom: 1px solid var(--c-line); }
     .band-label {
       display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px 0;
       font-size: 11px; line-height: 14px; color: var(--c-text-faint);
@@ -429,6 +433,12 @@
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+      /* Narrow: the Builder band goes to two columns. */
+    @media (max-width: 1100px) {
+      .stats--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stats--four .stat { border-right: 1px solid var(--c-line); border-bottom: 1px solid var(--c-line); }
+      .stats--four .stat:nth-child(2n) { border-right: none; }
     }
   </style>
 </head>
@@ -809,6 +819,20 @@
       return String(n);
     }
     function num(n) { return (n || 0).toLocaleString("en-US"); }
+    // Builder allowances from the API's own settings (credits and dollars).
+    function money2(usd) { return "$" + Number(usd || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function allowanceCell(a) {
+      if (!a) return { label: "Free allowance", value: "·", sub: "" };
+      return { label: "Free allowance, per person", value: num(a.free.credits) + " credits",
+        sub: money2(a.free.usd) + " a month · Pro " + num(a.pro.credits) + " (" + money2(a.pro.usd) + ") · Business seat " + num(a.business.credits) + " (" + money2(a.business.usd) + ")" };
+    }
+    function poolCell(a) {
+      if (!a) return { label: "Free pool", value: "·", sub: "" };
+      var p = a.pool, pct = p.usd ? Math.round(p.spent_usd / p.usd * 100) : 0;
+      return { label: "Free pool this month", value: money2(p.spent_usd) + " / " + money2(p.usd),
+        html: '<div class="meter' + (p.released_usd && p.spent_usd >= p.released_usd * 0.9 ? " is-warn" : "") + '"><i style="width:' + Math.min(100, pct) + '%"></i></div>',
+        sub: num(p.spent_credits) + " of " + num(p.credits) + " credits · " + money2(p.released_usd) + " released so far" };
+    }
     function renderBuilder() {
       var b = state.data.builder;
       var el = $("builder-band");
@@ -835,12 +859,14 @@
         perUser("Per free user", "free", true),
         perUser("Per paid user", "paid", true),
         perUser("Per ChatGPT plan user", "chatgpt", false),
+        allowanceCell(b.allowance),
+        poolCell(b.allowance),
         { label: "Credits used", value: num(all.credits), sub: "$" + (all.credits / 100).toFixed(2) + " of AI · free " + num((T.free || {}).credits) + " · paid " + num((T.paid || {}).credits) },
         { label: "Components", value: num(C.made), sub: num(C.drafts) + " drafts · " + num(C.live) + " live" + (C.in_review ? " · " + num(C.in_review) + " in review" : "") }
       ];
       el.innerHTML = '<div class="band-label"><strong>Transitions UI Builder</strong><span>averages per person who drafted, all time</span></div>' +
-        '<div class="stats stats--agent">' + cells.map(function (c) {
-          return '<div class="stat"><span class="stat-label">' + esc(c.label) + '</span><span class="stat-value">' + esc(c.value) + '</span><span class="stat-sub">' + esc(c.sub) + "</span></div>";
+        '<div class="stats stats--agent stats--four">' + cells.map(function (c) {
+          return '<div class="stat"><span class="stat-label">' + esc(c.label) + '</span><span class="stat-value">' + esc(c.value) + "</span>" + (c.html || "") + '<span class="stat-sub">' + esc(c.sub) + "</span></div>";
         }).join("") + "</div>";
     }
     function renderStudio() {
