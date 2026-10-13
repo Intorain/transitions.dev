@@ -2125,6 +2125,15 @@
     }
   </style>
   <link rel="stylesheet" href="assets/ui-generation/ui-generation.css?v=1" />
+  <!-- The prompt box generates in (composer-generate.js): hidden before its
+       first paint, shown after 4s whatever happens. -->
+  <style>.cm-gen-pending #cm-beam { opacity: 0; }</style>
+  <script>
+    if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      document.documentElement.classList.add("cm-gen-pending");
+      setTimeout(function () { document.documentElement.classList.remove("cm-gen-pending"); }, 4000);
+    }
+  </script>
   <link rel="stylesheet" href="assets/community/community.css?v=245" />
   <style>
 /* "Real patterns" card: a Community component generating on a loop
@@ -3143,8 +3152,9 @@ html[data-theme="dark"] .t-gen.is-quiet { --gen-line: #3f3f3f; --gen-strong: #61
   <script src="assets/community/community.js?v=244" defer></script>
   <script src="assets/community/beam.js?v=140" defer></script>
   <script src="assets/community/feed.js?v=152" defer></script>
+  <script type="module" src="assets/community/composer-generate.js?v=7"></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
   <script src="assets/nav-products.js?v=16" defer></script>
-  <script type="module" src="assets/community/ub-generate.js?v=5"></script>
+  <script type="module" src="assets/community/ub-generate.js?v=8"></script>
 </body>
 </html>

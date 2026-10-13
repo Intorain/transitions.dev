@@ -41,6 +41,10 @@ const DEFAULTS = {
   title: null,               // name used in the generated CSS header; null = from aria-label / heading
   maxParts: 60,              // most parts traced (largest first when there are more)
   keys: 5,                   // key elements that get guides, handles and a size label
+  reveal: "scan",            // "scan": wiped in behind a scan line | "fade": a cross-blur fade, no line
+  fadeDuration: null,        // reveal "fade" only: ms the fade lasts (null = its share of duration)
+  revealAt: null,            // reveal "fade" only: ms the element starts fading in, over the drawing,
+                             // which keeps its own timing (null = when the drawing ends)
   onDone: null,
 };
 
@@ -311,16 +315,28 @@ function drawStroke(s, q, t) {
 function frame(G, p, t, D) {
   const { w, h } = G, clean = 1 - smooth(PH.clean[0], PH.clean[1], p);
   // the real element: wiped in behind the scan line, fading and sharpening on a smooth ease-out
-  const sq = SMOOTH_OUT(win(PH.reveal, p)), y = sq * (h + 6) - 3, fq = SMOOTH_OUT(win([PH.reveal[0], PH.reveal[1] + 0.03], p)), es = G.el.style;
+  const sq = SMOOTH_OUT(win(PH.reveal, p)), y = sq * (h + 6) - 3, es = G.el.style;
+  // the fade: its share of the run, or its own length (fadeDuration). fq clears the drawing at
+  // its usual time; eq brings the element in, from revealAt when that is earlier.
+  const fq = G.fadeMs ? SMOOTH_OUT(clamp((t - PH.reveal[0] * D) / G.fadeMs)) : SMOOTH_OUT(win([PH.reveal[0], PH.reveal[1] + 0.03], p));
+  const eq = G.fade && G.revealAt != null ? SMOOTH_OUT(clamp((t - G.revealAt) / (G.fadeMs || 0.345 * D))) : fq;
   const pad = 80; // keeps the element's own shadow inside the clip
-  es.opacity = p < PH.reveal[0] ? 0 : f2(fq);
-  // past the bottom edge as the scan finishes, so the shadow below the element comes in with it (no pop when the clip goes)
-  const yc = y + smooth(0.6, 1, sq) * pad;
-  es.clipPath = p >= PH.reveal[1] ? G.prev.clipPath : `inset(-${pad}px -${pad}px ${f2(h - yc - 1)}px -${pad}px)`;
-  es.filter = fq > 0 && fq < 0.99 ? `blur(${f2(3 * (1 - fq))}px)` : G.prev.filter;
-  G.clipRect.setAttribute("y", f2(p < PH.reveal[0] ? -999 : y)); G.clipRect.setAttribute("height", f2(h + 999));
-  G.wire.setAttribute("opacity", f2(1 - 0.6 * fq));
-  G.scan.setAttribute("opacity", f2(p >= PH.reveal[0] && p < PH.reveal[1] ? smooth(0, 0.12, sq) * (1 - smooth(0.85, 1, sq)) : 0));
+  es.opacity = eq <= 0 ? 0 : f2(eq);
+  es.filter = eq > 0 && eq < 0.99 ? `blur(${f2(3 * (1 - eq))}px)` : G.prev.filter;
+  if (G.fade) {
+    // reveal "fade": no line and no wipe; the drawing fades out as the element fades in, sharpening
+    es.clipPath = G.prev.clipPath;
+    G.clipRect.setAttribute("y", -999); G.clipRect.setAttribute("height", f2(h + 1999));
+    G.wire.setAttribute("opacity", f2(1 - fq));
+    G.scan.setAttribute("opacity", 0);
+  } else {
+    // past the bottom edge as the scan finishes, so the shadow below the element comes in with it (no pop when the clip goes)
+    const yc = y + smooth(0.6, 1, sq) * pad;
+    es.clipPath = p >= PH.reveal[1] ? G.prev.clipPath : `inset(-${pad}px -${pad}px ${f2(h - yc - 1)}px -${pad}px)`;
+    G.clipRect.setAttribute("y", f2(p < PH.reveal[0] ? -999 : y)); G.clipRect.setAttribute("height", f2(h + 999));
+    G.wire.setAttribute("opacity", f2(1 - 0.6 * fq));
+    G.scan.setAttribute("opacity", f2(p >= PH.reveal[0] && p < PH.reveal[1] ? smooth(0, 0.12, sq) * (1 - smooth(0.85, 1, sq)) : 0));
+  }
   G.scan.setAttribute("transform", `translate(0 ${f2(y)})`);
   G.scanLine.style.strokeDashoffset = f2(-(t * FLOW * 2) % 5);
 
@@ -345,7 +361,7 @@ function frame(G, p, t, D) {
     const rain = back >= 0 && back < d.tr ? (1 - back / d.tr) ** 1.6 * rainOn * env * d.edge : 0;
     const near = rb ? Math.max(0, 1 - Math.max(rb.x - d.x, d.x - rb.x - rb.w, rb.y - d.y, d.y - rb.y - rb.h, 0) / 16) * (d.x > rb.x && d.x < rb.x + rb.w && d.y > rb.y && d.y < rb.y + rb.h ? 1 : 0.6) : 0;
     const probe = probeOp > 0 ? Math.exp(-(((d.x - probeX) / 9) ** 2)) * probeOp * env : 0;
-    const lit = Math.max(front, rain, near * rOp * 0.8, probe), under = d.inside && p >= PH.reveal[0] && d.y < y ? 0 : 1; // gone where the real UI is in
+    const lit = Math.max(front, rain, near * rOp * 0.8, probe), under = G.fade ? 1 - fq : d.inside && p >= PH.reveal[0] && d.y < y ? 0 : 1; // gone where the real UI is in
     d.el.setAttribute("opacity", f2(Math.max(env * 0.5 * d.edge, lit * d.edge) * clean * under));
     d.el.setAttribute("r", f2(1.05 + lit * 0.85));
     d.el.classList.toggle("is-lit", lit > 0.35);
@@ -445,14 +461,19 @@ export function generate(el, options = {}) {
   timer = setTimeout(() => {
     requestAnimationFrame(() => {
       if (stopped) return;
-      try { const M = measure(el, opts); G = buildOverlay(el, M, opts); G.prev = prev; }
+      try {
+        const M = measure(el, opts); G = buildOverlay(el, M, opts); G.prev = prev; G.fade = opts.reveal === "fade";
+        G.fadeMs = G.fade && +opts.fadeDuration > 0 ? +opts.fadeDuration : 0;
+        G.revealAt = G.fade && opts.revealAt != null && isFinite(+opts.revealAt) ? Math.max(0, +opts.revealAt) : null;
+      }
       catch (e) { if (el.__tGenLayer) el.__tGenLayer.remove(); G = null; console.warn("UIGeneration: could not build the overlay, showing the element", e); return finish(); }
       const D = Math.max(400, +opts.duration || DEFAULTS.duration), t0 = performance.now();
       const tick = (now) => {
         if (stopped) return;
         const t = now - t0, p = t / D;
         frame(G, p, t, D);
-        if (p >= END) return finish();
+        const fadeEnd = Math.max(G.fadeMs ? PH.reveal[0] * D + G.fadeMs : 0, G.revealAt != null ? G.revealAt + (G.fadeMs || 0.345 * D) : 0);
+        if (p >= END && t >= fadeEnd) return finish();
         raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);

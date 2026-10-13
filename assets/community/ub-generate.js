@@ -5,7 +5,7 @@
 // and stays inside the card. It only runs while the card is on screen, and
 // not at all with reduced motion: the component simply sits there. The
 // component is the real one, so it can be used, and the loop waits while it is.
-import { generate } from "../ui-generation/ui-generation.js?v=1";
+import { generate } from "../ui-generation/ui-generation.js?v=4";
 
 const card = document.querySelector("[data-ub-generate]");
 const stage = card && card.querySelector(".ub-gen");
