@@ -1,4 +1,4 @@
-// The prompt box (homepage and Builder hero) arrives with the
+// The homepage prompt box arrives with the
 // transitions-ui-generation skill's skeleton: drawn as a dotted wireframe,
 // then revealed with a cross-blur fade (no scan line). Once per load. The
 // drawing runs its full 1.6s; the box starts fading in over it at 0.93s,
