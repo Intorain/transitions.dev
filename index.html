@@ -6129,7 +6129,7 @@
       .nav-pill { padding: 0 9px; }
     }
   </style>
-  <link rel="stylesheet" href="assets/nav-products.css?v=11" />
+  <link rel="stylesheet" href="assets/nav-products.css?v=15" />
   <link rel="stylesheet" href="assets/community/community.css?v=245" />
   <style>
     /* ─── Homepage layout ──────────────────────────────────────────
@@ -6155,6 +6155,17 @@
     /* Community: one row, a See more button beside the lead. */
     .home-community { width: 100%; margin: 96px 0; }
     .cards-browse { flex: none; height: 36px; }
+    /* The library and Community leads and the filter row line up with the
+       top bar (nav-products.css: 1192px, 24px gutter); the cards below
+       keep the full width. */
+    @media (min-width: 901px) {
+      .app > .home-section-head, #cards-toolbar, .home-community .home-section-head,
+      .home-agent > .home-section-head, .home-agent .agent-bento-wrap, .app > .sponsors {
+        --w: min(1192px, var(--page-w, 100vw) - 48px);
+        box-sizing: border-box; width: var(--w); max-width: none;
+        margin-left: calc((100% - var(--w)) / 2); margin-right: calc((100% - var(--w)) / 2);
+      }
+    }
     /* Phones: no category pills (one card shows anyway); Browse all takes
        their place, on the left. */
     @media (max-width: 720px) {
@@ -15737,7 +15748,7 @@ btn.textContent = STATES[i].label;
   <script src="assets/community/beam.js?v=140" defer></script>
   <script src="assets/community/feed.js?v=152" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
-  <script src="assets/nav-products.js?v=10" defer></script>
+  <script src="assets/nav-products.js?v=16" defer></script>
 </body>
 </html>
 
