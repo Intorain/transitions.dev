@@ -1721,9 +1721,9 @@
 
     a.card-remix { text-decoration: none; }
     .card-remix .card-copy-tooltip .tt-text { white-space: nowrap; }
-    /* Pro cards: Remix sits left of Copy. Locked (no href, aria-disabled)
-       until pro-client.js sees a Pro plan, then it opens the Studio. */
-    .card-remix--pro { right: calc(var(--card-pad-x) + 44px); }
+    /* Pro cards: Remix in the copy button's slot, as on the free cards.
+       Locked (no href, aria-disabled) until pro-client.js sees a Pro plan,
+       then it opens the Studio. */
     .card-remix--pro[aria-disabled="true"] { opacity: 0.4; cursor: default; }
     .card-remix--pro[aria-disabled="true"]:hover { background-image: linear-gradient(90deg, var(--copy-bg) 0%, var(--copy-bg) 100%); color: var(--icon-color-muted); }
     html[data-theme="dark"] .card-remix--pro[aria-disabled="true"]:hover { background: var(--copy-bg); }
@@ -6227,15 +6227,6 @@
           <div class="card-title">Confetti burst</div>
           <div class="card-subtitle">Physics confetti lands on the button</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Confetti burst CSS" data-pro-copy="confetti-burst">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="confetti-burst" aria-disabled="true" aria-label="Remix Confetti burst in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -6389,15 +6380,6 @@
           <div class="card-title">Gooey plus menu</div>
           <div class="card-subtitle">Liquid split into a fan of actions</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Gooey plus menu CSS" data-pro-copy="gooey-plus-menu">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="gooey-plus-menu" aria-disabled="true" aria-label="Remix Gooey plus menu in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -6586,15 +6568,6 @@
           <div class="card-title">Card stack hover</div>
           <div class="card-subtitle">Stack fans out with a spring on hover</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Card stack hover CSS" data-pro-copy="card-stack-hover">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="card-stack-hover" aria-disabled="true" aria-label="Remix Card stack hover in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -6785,15 +6758,6 @@
           <div class="card-title">Drag &amp; drop with physics</div>
           <div class="card-subtitle">Zone morphs into the image</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Drag &amp; drop with physics CSS" data-pro-copy="drag-drop-physics">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="drag-drop-physics" aria-disabled="true" aria-label="Remix Drag &amp; drop with physics in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -6840,15 +6804,6 @@
           <div class="card-title">Organic shimmer</div>
           <div class="card-subtitle">Wavy shimmer with edge glow</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Organic shimmer CSS" data-pro-copy="organic-shimmer">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="organic-shimmer" aria-disabled="true" aria-label="Remix Organic shimmer in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -7041,15 +6996,6 @@
           <div class="card-title">Image open tilt</div>
           <div class="card-subtitle">Zoom with 3D tilt and bend</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Image open tilt CSS" data-pro-copy="image-open-tilt">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="image-open-tilt" aria-disabled="true" aria-label="Remix Image open tilt in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -7133,15 +7079,6 @@
           <div class="card-title">Spinner to check morph</div>
           <div class="card-subtitle">Spinner pops into a drawn check</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Spinner to check morph CSS" data-pro-copy="spinner-check-morph">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="spinner-check-morph" aria-disabled="true" aria-label="Remix Spinner to check morph in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -7196,15 +7133,6 @@
           <div class="card-title">Pro gradient text</div>
           <div class="card-subtitle">Colour washes orbit the letters</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Pro gradient text CSS" data-pro-copy="pro-gradient-text">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="pro-gradient-text" aria-disabled="true" aria-label="Remix Pro gradient text in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -7235,15 +7163,6 @@
           <div class="card-title">Delete with smoky dissolve</div>
           <div class="card-subtitle">Image shreds and falls into smoke</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Delete with smoky dissolve CSS" data-pro-copy="smoky-dissolve">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="smoky-dissolve" aria-disabled="true" aria-label="Remix Delete with smoky dissolve in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -7370,15 +7289,6 @@
           <div class="card-title">Image generation placeholder</div>
           <div class="card-subtitle">Dot noise wakes, then resolves into the image</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Image generation placeholder CSS" data-pro-copy="image-gen-placeholder">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="image-gen-placeholder" aria-disabled="true" aria-label="Remix Image generation placeholder in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
@@ -7396,15 +7306,6 @@
           <div class="card-title">Get Pro button</div>
           <div class="card-subtitle">Pro gradient glows in from the pill&rsquo;s rim</div>
         </div>
-        <button type="button" class="card-copy" aria-label="Copy Get Pro button CSS" data-pro-copy="get-pro-button">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
         <a class="card-copy card-remix card-remix--pro" data-pro-remix="get-pro-button" aria-disabled="true" aria-label="Remix Get Pro button in the Builder (Pro)">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
           <span class="card-copy-tooltip" role="tooltip" aria-hidden="true"><span class="tt-text">Pro only</span></span>
