@@ -1,30 +1,17 @@
 // The chevron does not rotate or flip: it is one line whose tip travels
 // through it, a little ahead of the ends, at the same width throughout.
-// Down to up and back in 500ms, ease-in-out (cubic-bezier(0.42, 0, 0.58,
-// 1), the site's text swaps' curve); an interrupted morph turns around from
-// where it is. Returns set(t): 0 down, 1 up. Shared by the top bar and the
-// mobile menu's Products.
+// Down to up and back in 168ms; an interrupted morph turns around from where
+// it is. Returns set(t): 0 down, 1 up. Shared by the top bar and the mobile
+// menu's Products.
 function chevronMorph(svg) {
   if (!svg) return function () {};
   svg.innerHTML = '<path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
   var arrow = svg.firstChild, morph = 0, raf = 0;
-  var DUR = 500, X1 = 0.42, Y1 = 0, X2 = 0.58, Y2 = 1;
-  // cubic-bezier(X1, Y1, X2, Y2): x(u) solved for u, then y(u).
-  function bez(x) {
-    var u = x;
-    for (var i = 0; i < 8; i++) {
-      var cx = 3 * X1 * u * (1 - u) * (1 - u) + 3 * X2 * u * u * (1 - u) + u * u * u - x;
-      var dx = 3 * X1 * (1 - u) * (1 - u) + 6 * (X2 - X1) * u * (1 - u) + 3 * (1 - X2) * u * u;
-      if (Math.abs(cx) < 1e-4 || !dx) break;
-      u = Math.max(0, Math.min(1, u - cx / dx));
-    }
-    return 3 * Y1 * u * (1 - u) * (1 - u) + 3 * Y2 * u * u * (1 - u) + u * u * u;
-  }
-  function clamp(x) { return Math.max(0, Math.min(1, x)); }
+  function ease(x) { x = Math.max(0, Math.min(1, x)); return 1 - Math.pow(1 - x, 3); }
   function draw(t) {
-    // t = 0: down (tip at 8,10). t = 1: up (tip at 8,6.5). The tip leads.
-    var tip = 10 - 3.5 * clamp(t / 0.9);
-    var end = 6.5 + 3.5 * clamp((t - 0.1) / 0.9);
+    // t = 0: down (tip at 8,10). t = 1: up (tip at 8,6.5).
+    var tip = 10 - 3.5 * ease(t / 0.9);
+    var end = 6.5 + 3.5 * ease((t - 0.1) / 0.9);
     arrow.setAttribute("d", "M4.5 " + end.toFixed(2) + "L8 " + tip.toFixed(2) + "L11.5 " + end.toFixed(2));
   }
   draw(0);
@@ -32,10 +19,10 @@ function chevronMorph(svg) {
     cancelAnimationFrame(raf);
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) { morph = to; draw(to); return; }
-    var from = morph, start = performance.now(), dur = DUR * Math.abs(to - from);
+    var from = morph, start = performance.now(), dur = 168 * Math.abs(to - from);
     (function step(now) {
       var k = dur ? Math.min(1, (now - start) / dur) : 1;
-      morph = from + (to - from) * bez(k);
+      morph = from + (to - from) * k;
       draw(morph);
       if (k < 1) raf = requestAnimationFrame(step);
     })(start);
