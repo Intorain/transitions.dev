@@ -700,7 +700,79 @@
 
   // The library card (index / library pages): stage, title, subtitle, and the
   // bottom-right slot where the copy button sits, here the view count.
-  var EYE = '<svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1.5 7C2.7 4.6 4.6 3.25 7 3.25S11.3 4.6 12.5 7C11.3 9.4 9.4 10.75 7 10.75S2.7 9.4 1.5 7Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="7" cy="7" r="1.75" stroke="currentColor" stroke-width="1.2"/></svg>';
+  var EYE = '<svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1.5 7C2.7 4.6 4.6 3.25 7 3.25S11.3 4.6 12.5 7C11.3 9.4 9.4 10.75 7 10.75S2.7 9.4 1.5 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="7" r="1.75" stroke="currentColor" stroke-width="1.5"/></svg>';
+  // The like on a card: the heart from the library's Like button (its pop and
+  // particle burst on a like), in the views' muted style.
+  var HEART = '<span class="cm-lk-heart" aria-hidden="true"><span class="cm-lk-icon"><svg viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.99511 3.42388C6.66221 1.8656 4.4395 1.44643 2.76947 2.87334C1.09944 4.30026 0.86432 6.68598 2.17581 8.3736C3.26622 9.77674 6.56619 12.7361 7.64774 13.6939C7.76874 13.801 7.82925 13.8546 7.89982 13.8757C7.96141 13.8941 8.02881 13.8941 8.0904 13.8757C8.16097 13.8546 8.22147 13.801 8.34248 13.6939C9.42403 12.7361 12.724 9.77674 13.8144 8.3736C15.1259 6.68598 14.9195 4.28525 13.2207 2.87334C11.522 1.46144 9.32801 1.8656 7.99511 3.42388Z" stroke="currentColor" stroke-width="1.71" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+    '<span class="cm-lk-particles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>';
+  // Only the heart is the button (round); the count sits beside it as text.
+  function likeButton(c) {
+    var n = c.likes || 0;
+    return '<span class="cm-likes" data-liked="' + (!!c.liked) + '" title="' + n + (n === 1 ? " like" : " likes") + '">' +
+      '<button type="button" class="cm-lk" aria-pressed="' + (!!c.liked) + '" aria-label="Like ' + esc(c.title) + '">' + HEART + "</button>" +
+      '<span class="cm-lk-n" data-text="' + compact(n) + '"><span class="sr-only">Likes: </span>' + compact(n) + "</span></span>";
+  }
+  // Each like scatters the 8 dots differently (the library card's seeding).
+  function burst(btn) {
+    btn.querySelectorAll(".cm-lk-particles i").forEach(function (d, i, all) {
+      var ang = (360 / all.length) * i + (Math.random() * 2 - 1) * 16, mag = 14 * (0.68 + Math.random() * 0.5), rad = ang * Math.PI / 180;
+      d.style.setProperty("--px", (Math.cos(rad) * mag).toFixed(2) + "px");
+      d.style.setProperty("--py", (Math.sin(rad) * mag).toFixed(2) + "px");
+      d.style.setProperty("--pdur", (600 * (0.78 + Math.random() * 0.44)).toFixed(0) + "ms");
+      d.style.setProperty("--pdelay", (Math.random() * 70).toFixed(0) + "ms");
+      d.style.setProperty("--p-end-scale", (0.35 + Math.random() * 0.4).toFixed(2));
+      d.style.setProperty("--psize", (0.6 + Math.random() * 0.8).toFixed(2));
+    });
+    btn.classList.remove("is-bursting");
+    void btn.offsetWidth;
+    btn.classList.add("is-bursting");
+    clearTimeout(btn._burst);
+    btn._burst = setTimeout(function () { btn.classList.remove("is-bursting"); }, 900);
+  }
+  // Anyone can like, signed in or not (the API keeps one like per visitor and
+  // limits how fast one network can like). The count moves at once and
+  // settles on the server's number.
+  function wireLike(btn, c) {
+    var busy = false, box = btn.parentNode, num = box.querySelector(".cm-lk-n");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (busy) return;
+      var on = box.getAttribute("data-liked") !== "true";
+      var n = Math.max(0, (c.likes || 0) + (on ? 1 : -1));
+      function paint(liked, count, pop) {
+        c.liked = liked; c.likes = count;
+        box.setAttribute("data-liked", String(liked));
+        btn.setAttribute("aria-pressed", String(liked));
+        box.title = count + (count === 1 ? " like" : " likes");
+        var prev = num.getAttribute("data-text") || "", next = compact(count);
+        if (prev === next) return;
+        num.setAttribute("data-text", next);
+        if (!pop) { num.innerHTML = '<span class="sr-only">Likes: </span>' + next; return; }
+        // Number pop-in (the library's recipe): the digits that changed rise
+        // in from below, blurred, 70ms apart; the ones that stayed hold still.
+        var same = 0;
+        while (same < prev.length && same < next.length && prev[same] === next[same]) same++;
+        num.classList.remove("is-animating");
+        num.innerHTML = '<span class="sr-only">Likes: </span>' + next.split("").map(function (ch, i, all) {
+          // 70ms apart, counted from the first digit that changed
+          var k = Math.min(2, i - same), st = k > 0 ? ' data-stagger="' + k + '"' : "";
+          return '<span class="t-digit"' + (i < same ? " data-same" : "") + st + ">" + esc(ch) + "</span>";
+        }).join("");
+        void num.offsetWidth;
+        num.classList.add("is-animating");
+      }
+      var was = { liked: !!c.liked, likes: c.likes || 0 };
+      paint(on, n, on);
+      if (on) burst(btn);
+      busy = true;
+      api.like(c.id, on).then(function (r) {
+        busy = false;
+        if (r && r.ok) paint(!!r.liked, r.likes || 0);
+        else { paint(was.liked, was.likes); toast(r && r.error === "rate_limited" ? "Too many likes for now. Try again later." : "That like did not go through.", "err"); }
+      });
+    });
+  }
+
   function compact(n) {
     n = n || 0;
     return n < 1000 ? String(n) : n < 10000 ? (Math.round(n / 100) / 10) + "k" : Math.round(n / 1000) + "k";
@@ -736,9 +808,11 @@
         subHtml +
       "</div>" +
       (live
-        ? '<span class="cm-views" title="' + (c.views || 0) + (c.views === 1 ? " view" : " views") + '">' + EYE +
-            '<span class="sr-only">Views: </span>' + compact(c.views) + "</span>"
+        ? '<span class="cm-stats">' + likeButton(c) +
+            '<span class="cm-views" title="' + (c.views || 0) + (c.views === 1 ? " view" : " views") + '">' + EYE +
+            '<span class="sr-only">Views: </span>' + compact(c.views) + "</span></span>"
         : "");
+    if (live) wireLike(el.querySelector(".cm-lk"), c);
     lazyPreview(el.querySelector("[data-cm-stage]"), c);
     // As a library card: the whole card opens it (links, buttons and the live
     // component keep their own clicks), and it is reachable by keyboard.

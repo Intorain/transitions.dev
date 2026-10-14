@@ -543,6 +543,15 @@ html[data-theme="dark"] {
 .cm-feed { width: 100%; max-width: 1008px; margin: 64px auto 0; }
 .cm-feed-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 20px; }
 .cm-feed-head h2 { margin: 0; font: 500 16px/20px var(--font-sans); color: var(--text); }
+/* The feed's lead lines up with the top bar (nav-products.css: 1192px, 24px
+   gutter); the cards below keep the full width. */
+@media (min-width: 901px) {
+  .cm-feed > .cm-feed-head {
+    --w: min(1192px, var(--page-w, 100vw) - 48px);
+    box-sizing: border-box; width: var(--w); max-width: none;
+    margin-left: calc((100% - var(--w)) / 2); margin-right: calc((100% - var(--w)) / 2);
+  }
+}
 /* Phones: just "Components", so the heading and the sort tabs share one row. */
 @media (max-width: 639px) { .cm-feed-title-more { display: none; } }
 .cm-feed .cards { justify-content: start; }
@@ -663,7 +672,7 @@ html[data-theme="dark"] .cm-badge--warn { background: rgba(234, 88, 12, 0.16); c
 /* Bottom of the card: the library card's own .card-meta / .card-title /
    .card-subtitle, only made into links (title opens it, author opens the
    profile). The copy button's slot holds the view count. */
-.cm-meta { width: calc(100% - 2 * var(--card-pad-x) - 64px); }
+.cm-meta { width: calc(100% - 2 * var(--card-pad-x) - 116px); }
 a.card-title, a.card-subtitle { text-decoration: none; }
 .cm-title, .cm-sub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Room below the line for descenders (the ellipsis clip cut the "y" in
@@ -677,11 +686,17 @@ a.cm-title { color: inherit; }
 /* The author: the name is the link, in the title's color; it underlines on hover. */
 .cm-sub-name { color: var(--text); text-decoration: none; }
 .cm-sub-name:hover { text-decoration: underline; text-underline-offset: 2px; }
-.cm-views {
+/* Likes and views, bottom right: the like is a button in the views' style. */
+.cm-stats {
   position: absolute;
   right: var(--card-pad-x);
   bottom: 16px;
   height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.cm-views {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -689,6 +704,58 @@ a.cm-title { color: inherit; }
   font: 400 12px/16px var(--font-sans);
 }
 .cm-views svg { width: 14px; height: 14px; flex: none; }
+/* The like: the library's Like button recipe (fill, pop, particle burst) at
+   the views' size and color. Only the heart is the button, a round one; the
+   count beside it is plain text like the views'. */
+.cm-likes {
+  --lk-color: #f40051; --lk-fill: 150ms; --lk-pop: 350ms; --lk-pop-ease: cubic-bezier(0.34, 1.96, 0.64, 1);
+  --lk-particle-size: 2.2px; --lk-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-flex; align-items: center; gap: 1px; color: var(--text-subtle); font: 400 12px/16px var(--font-sans);
+  transition: color var(--lk-fill) var(--lk-ease);
+}
+html[data-theme="dark"] .cm-likes { --lk-color: #ff3d76; }
+.cm-likes[data-liked="true"] { color: var(--lk-color); }
+/* The count keeps a steady width (two digits' room), so the heart doesn't
+   shift when a like changes it (the row is anchored on the right). */
+.cm-lk-n { min-width: 2ch; }
+/* Number pop-in on a like (the library's recipe tokens). */
+.cm-lk-n .t-digit { display: inline-block; }
+.cm-lk-n.is-animating .t-digit { animation: cm-digit-in 500ms cubic-bezier(0.34, 1.45, 0.64, 1) both; }
+.cm-lk-n.is-animating .t-digit[data-stagger="1"] { animation-delay: 70ms; }
+.cm-lk-n.is-animating .t-digit[data-stagger="2"] { animation-delay: 140ms; }
+.cm-lk-n.is-animating .t-digit[data-same] { animation: none; }
+@keyframes cm-digit-in { 0% { transform: translateY(8px); opacity: 0; filter: blur(2px); } 100% { transform: none; opacity: 1; filter: none; } }
+@media (prefers-reduced-motion: reduce) { .cm-lk-n.is-animating .t-digit { animation: none; } }
+.cm-lk {
+  appearance: none; display: grid; place-items: center; width: 36px; height: 36px; margin: 0 -6px 0 -11px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
+  transition: background-color 150ms ease;
+}
+@media (hover: hover) and (pointer: fine) { .cm-lk:hover { background: var(--chip-bg); } }
+.cm-lk:focus-visible { outline: 2px solid var(--text-muted); outline-offset: 1px; }
+.cm-lk-heart { position: relative; display: inline-flex; width: 14px; height: 14px; flex: none; }
+.cm-lk-icon { display: inline-flex; transform-origin: center; }
+.cm-lk-icon svg { width: 14px; height: 14px; display: block; overflow: visible; }
+.cm-lk-icon path { fill: transparent; stroke: currentColor; transition: fill var(--lk-fill) var(--lk-ease); }
+.cm-likes[data-liked="true"] .cm-lk-icon path { fill: currentColor; }
+.cm-lk.is-bursting .cm-lk-icon { animation: cm-lk-pop var(--lk-pop) var(--lk-pop-ease); }
+@keyframes cm-lk-pop { 0% { transform: scale(1); } 30% { transform: scale(0.82); } 100% { transform: scale(1); } }
+.cm-lk-particles { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; color: var(--lk-color); }
+.cm-lk-particles i {
+  position: absolute; left: calc(var(--lk-particle-size) * var(--psize, 1) / -2); top: calc(var(--lk-particle-size) * var(--psize, 1) / -2);
+  width: calc(var(--lk-particle-size) * var(--psize, 1)); height: calc(var(--lk-particle-size) * var(--psize, 1));
+  border-radius: 50%; background: currentColor; opacity: 0;
+}
+.cm-lk.is-bursting .cm-lk-particles i { animation: cm-lk-burst var(--pdur, 600ms) ease-out var(--pdelay, 0ms) forwards; }
+@keyframes cm-lk-burst {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  20% { opacity: 1; transform: translate(calc(var(--px) * 0.25), calc(var(--py) * 0.25)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(var(--p-end-scale, 0.6)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cm-lk.is-bursting .cm-lk-icon, .cm-lk.is-bursting .cm-lk-particles i { animation: none; }
+}
 @media (prefers-reduced-motion: reduce) { .cm-feed .card.cm-card { transition: none; } }
 
 /* Like (Studio header only). */
