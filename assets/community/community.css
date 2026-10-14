@@ -2814,7 +2814,7 @@ a.pf-link:hover { background: var(--chip-bg-hover); }
 html[data-theme="dark"] .ub-card { background: #141414; }
 /* The card's hairline sits above its frame, so it follows the rounded
    corner and reads the same over the gray card and the white frame. */
-.ub-card::after { content: ""; position: absolute; inset: 0; z-index: 10; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05) inset, 0 -1px 0 0 rgba(0, 0, 0, 0.02) inset; }
+.ub-card::after { content: ""; position: absolute; inset: 0; z-index: 10; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02) inset, 0 -1px 0 0 rgba(0, 0, 0, 0.03) inset; }
 html[data-theme="dark"] .ub-card::after { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset, 0 -1px 0 0 rgba(255, 255, 255, 0.03) inset; }
 .ub-card--tall { grid-row: span 2; min-height: 552px; }
 .ub-title { margin: 0 0 10px; font: 500 22px/28px "Saans", var(--font-sans); letter-spacing: -0.01em; color: var(--text); text-wrap: balance; }
@@ -2831,16 +2831,20 @@ html[data-theme="dark"] .ub-card::after { box-shadow: 0 0 0 1px rgba(255, 255, 2
   position: relative;
   flex: 1;
   min-height: 132px;
-  margin: 22px -32px -28px 0;
-  border-radius: 16px 0 0 0;
+  /* The Pricing page's bento frame (pro.html .pro-refine-frame): it bleeds
+     past the card's right and bottom edges, so only its top and left
+     borders show. */
+  margin: 20px -42px -30px 0;
+  border: 1px solid var(--card-border, rgba(0, 0, 0, 0.06));
+  border-radius: 10px 0 0 0;
   background: var(--ub-surface);
-  box-shadow: 0 0 0 1px var(--ub-line), 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--card-shadow);
   overflow: hidden;
   color: var(--text);
   font-size: 12px;
   line-height: 16px;
 }
-html[data-theme="dark"] .ub-frame { --ub-surface: #1b1b1b; --ub-sunk: #222222; --ub-line: rgba(255, 255, 255, 0.06); --ub-ink-soft: rgba(255, 255, 255, 0.08); --ub-ink-ring: rgba(255, 255, 255, 0.16); }
+html[data-theme="dark"] .ub-frame { border-color: rgba(255, 255, 255, 0.07); --ub-surface: #191919; --ub-sunk: #222222; --ub-line: rgba(255, 255, 255, 0.06); --ub-ink-soft: rgba(255, 255, 255, 0.08); --ub-ink-ring: rgba(255, 255, 255, 0.16); }
 
 /* Real patterns: library cards scattered past the card's edges (the Pro
    page's main bento card). Each mini is a library card at 0.709x: the
@@ -2870,7 +2874,7 @@ html[data-theme="dark"] .ub-mini-stage img.is-dark { display: block; }
 
 /* 2. Trained for UI motion and craft: the agent's motion audit, every
    state matched to its pattern and checked off. Static. */
-.ub-frame--audit { display: flex; flex-direction: column; padding: 20px 20px 20px 24px; }
+.ub-frame--audit { display: flex; flex-direction: column; padding: 16px 28px 16px 18px; }
 .ub-audit-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text); }
 .ub-audit-count { padding: 2px 8px; border-radius: 40px; background: var(--ub-sunk); color: var(--text-muted); font-size: 12px; line-height: 16px; font-weight: 400; }
 .ub-audit { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
@@ -2901,7 +2905,7 @@ html[data-theme="dark"] .ub-mini-stage img.is-dark { display: block; }
 .ub-audit-tokens { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 16px; }
 .ub-audit-tokens code { padding: 3px 8px; border-radius: 6px; background: var(--ub-sunk); color: var(--text-muted); font: 11px/14px var(--font-mono); }
 /* 4. Screenshot to component: a flat capture, scanned, then the live toggle. */
-.ub-frame--shot { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 16px 20px 16px 16px; }
+.ub-frame--shot { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 16px 30px 16px 16px; }
 .ub-shot, .ub-live { position: relative; flex: 1; min-width: 0; padding: 10px; border-radius: 12px; overflow: hidden; }
 .ub-shot { background: var(--ub-sunk); filter: grayscale(1); opacity: 0.75; box-shadow: inset 0 0 0 1px var(--ub-line); }
 .ub-live { background: var(--ub-surface); box-shadow: 0 0 0 1px var(--ub-line), 0 6px 16px rgba(0, 0, 0, 0.08); }
@@ -2921,7 +2925,7 @@ html[data-theme="dark"] .ub-mini-stage img.is-dark { display: block; }
 .ub-frame--shot .ub-live .ub-swap { position: absolute; }
 
 /* 5. Design systems: one button, two systems. */
-.ub-frame--ds { display: flex; align-items: center; padding: 18px 20px; }
+.ub-frame--ds { display: flex; align-items: center; padding: 18px 30px 18px 20px; }
 .ub-sys { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
 .ub-sys-col { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 12px; background: var(--ub-sunk); box-shadow: inset 0 0 0 1px var(--ub-line); }
 .ub-sys-col:last-child { background: #f2ede6; color: #231d16; }
@@ -2934,7 +2938,7 @@ html[data-theme="dark"] .ub-btn-modern { background: #fff; color: #0d0d0d; }
 .ub-sys-tokens i { width: 14px; height: 14px; border-radius: 4px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
 
 /* 6. Easing curve editor. */
-.ub-frame--curve { display: flex; align-items: center; padding: 14px 18px; }
+.ub-frame--curve { display: flex; align-items: center; padding: 14px 28px 14px 18px; }
 .ub-curve { display: flex; align-items: center; gap: 16px; width: 100%; }
 .ub-curve svg { flex: none; width: 104px; height: 104px; overflow: visible; }
 .ub-grid-lines { stroke: var(--ub-line); stroke-width: 1; }
