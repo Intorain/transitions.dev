@@ -1075,15 +1075,29 @@
           return '</dl><div class="insp-divider"></div><div class="insp-section">Community</div><dl>' +
             row("Profile", c.handle ? '<a href="/profile.html?u=' + encodeURIComponent(c.handle) + '" target="_blank" rel="noopener">@' + esc(c.handle) + "</a>" : '<span class="muted">None</span>') +
             row("Components", '<span class="tnum">' + esc(c.made + " made, " + c.live + " live" + (c.pending ? ", " + c.pending + " in review" : "")) + "</span>") +
-            row("Builder", c.drafts ? '<span class="tnum">' + esc(plural(c.drafts, "draft") + ", " + num(c.credits || 0) + " credits ($" + c.ai_usd.toFixed(2) + ")") + "</span>" : '<span class="muted">No drafts</span>') +
+            row("Builder", c.drafts || c.failed ? '<span class="tnum">' + esc(plural(c.drafts || 0, "draft") + (c.failed ? ", " + c.failed + " failed" : "") + ", " + num(c.credits || 0) + " credits ($" + (c.ai_usd || 0).toFixed(2) + ")") + "</span>" : '<span class="muted">No drafts</span>') +
             (c.drafts ? row("Tokens", '<span class="tnum">' + esc(tok((c.tokens_in || 0) + (c.tokens_out || 0)) + " (" + tok(c.tokens_in) + " in, " + tok(c.tokens_out) + " out)") + "</span>") : "") +
-            (c.tiers ? row("Drafted on", esc(Object.keys(c.tiers).map(function (k) { return c.tiers[k] + " " + ({ free: "free", paid: "paid", chatgpt: "ChatGPT plan" }[k] || k); }).join(", "))) : "") +
+            (c.tiers && c.drafts ? row("Drafted on", esc(Object.keys(c.tiers).map(function (k) { return c.tiers[k] + " " + ({ free: "free", paid: "paid", chatgpt: "ChatGPT plan" }[k] || k); }).join(", "))) : "") +
             (c.last_at ? row("Last active", esc(ago(c.last_at))) : "") +
             (c.recent && c.recent.length ? row("Recent", c.recent.map(function (r) {
               return '<a href="/studio.html?id=' + encodeURIComponent(r.id) + (r.state === "review" ? "&review=1" : "") + '" target="_blank" rel="noopener">' + esc(r.title || "Untitled") + "</a> " +
                 '<span class="muted">' + esc(states[r.state] || r.state) + "</span>";
             }).join("<br>")) : "");
         })(p.community) : "") +
+        (function () {
+          // This person's errors from the last 30 days (newest first).
+          var list = ((state.data.errors && state.data.errors.list) || []).filter(function (e) { return e.email === p.email; });
+          if (!list.length) return "";
+          var shown = list.slice(0, 8);
+          return '</dl><div class="insp-divider"></div><div class="insp-section">Errors, last 30 days</div><dl>' +
+            shown.map(function (e) {
+              var kind = (ERR[e.code] || [])[1];
+              var where = (e.source === "agent" ? "Motion Agent" : "Builder") + (e.model ? " · " + String(e.model).replace(/^claude-/, "") : "");
+              return "<dt>" + esc(ago(e.at)) + "</dt><dd>" + '<span class="err-what"><span class="err-dot' + (kind === "fail" ? " fail" : kind === "info" ? " info" : "") + '"></span>' + esc(errLabel(e.code)) + "</span>" +
+                '<div class="err-where">' + esc(where + (e.detail ? " · " + e.detail : "")) + "</div></dd>";
+            }).join("") +
+            (list.length > shown.length ? "<dt></dt><dd class=\"muted\">" + esc((list.length - shown.length) + " more in the Errors tab") + "</dd>" : "");
+        })() +
         '</dl><div class="insp-divider"></div><div class="insp-section">Activity</div><dl>' +
           row("Joined", esc(day(p.created_at))) +
           row("Account", p.account ? "Yes" : '<span class="muted">No, Stripe only</span>') +
