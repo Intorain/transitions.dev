@@ -830,8 +830,19 @@
       if (!a) return { label: "Free pool", value: "·", sub: "" };
       var p = a.pool, pct = p.usd ? Math.round(p.spent_usd / p.usd * 100) : 0;
       return { label: "Free pool this month", value: money2(p.spent_usd) + " / " + money2(p.usd),
-        html: '<div class="meter' + (p.released_usd && p.spent_usd >= p.released_usd * 0.9 ? " is-warn" : "") + '"><i style="width:' + Math.min(100, pct) + '%"></i></div>',
-        sub: num(p.spent_credits) + " of " + num(p.credits) + " credits · " + money2(p.released_usd) + " released so far" };
+        html: '<div class="meter' + (pct >= 80 ? " is-warn" : "") + '"><i style="width:' + Math.min(100, pct) + '%"></i></div>',
+        sub: num(p.spent_credits) + " of " + num(p.credits) + " credits" + (p.released_usd < p.usd ? " · " + money2(p.released_usd) + " released so far" : " · all available now") };
+    }
+    // Paid allowances added up: every paying person's monthly credits
+    // (tiers included, Business per seat; lifetime packs left out).
+    function paidPoolCell(a) {
+      var p = a && a.paid_pool;
+      if (!p) return { label: "Paid allowance this month", value: "·", sub: "" };
+      var pct = p.credits ? Math.round(p.spent_credits / p.credits * 100) : 0;
+      return { label: "Paid allowance this month", value: num(p.spent_credits) + " / " + num(p.credits),
+        html: '<div class="meter' + (pct >= 80 ? " is-warn" : "") + '"><i style="width:' + Math.min(100, pct) + '%"></i></div>',
+        sub: pct + "% used · " + money2(p.spent_credits / 100) + " of " + money2(p.credits / 100) + " · " +
+          plural(p.pro, "Pro") + ", " + plural(p.business, "Business seat") + (p.other ? ", " + p.other + " other" : "") };
     }
     function renderBuilder() {
       var b = state.data.builder;
@@ -855,12 +866,12 @@
             : "no drafts yet" };
       };
       var cells = [
-        { label: "Builder drafts", value: num(all.drafts), sub: num(monthDrafts) + " this month" + (all.failed ? " · " + num(all.failed) + " failed" : "") },
+        { label: "Builder drafts", value: num(all.drafts), sub: num(monthDrafts) + " this month" + (all.failed ? " · " + num(all.failed) + " failed" : "") + ((T.chatgpt || {}).drafts ? " · " + num(T.chatgpt.drafts) + " on ChatGPT plans" : "") },
         perUser("Per free user", "free", true),
         perUser("Per paid user", "paid", true),
-        perUser("Per ChatGPT plan user", "chatgpt", false),
         allowanceCell(b.allowance),
         poolCell(b.allowance),
+        paidPoolCell(b.allowance),
         { label: "Credits used", value: num(all.credits), sub: "$" + (all.credits / 100).toFixed(2) + " of AI · free " + num((T.free || {}).credits) + " · paid " + num((T.paid || {}).credits) },
         { label: "Components", value: num(C.made), sub: num(C.drafts) + " drafts · " + num(C.live) + " live" + (C.in_review ? " · " + num(C.in_review) + " in review" : "") }
       ];
