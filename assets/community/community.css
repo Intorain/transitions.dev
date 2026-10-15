@@ -117,6 +117,26 @@ html[data-theme="dark"] .cm-btn--accent { color: #04131a; }
 
 /* ── Hero + composer (Figma 1696:36022 "demo page") ──────────────────────── */
 .cm-hero { padding-top: 67px; }
+/* Members pill above the feed's headline: the libraries.dev hero badge
+   (28px, number bright, word dim), in both themes. Fades in once the
+   number arrives. */
+.cm-people {
+  display: inline-flex; align-items: center; height: 28px; margin: 0 0 12px; padding: 0 12px;
+  border-radius: 24px; background: #fff; color: #3c3c3c;
+  font-size: 13px; font-weight: 400; line-height: 24.2px; font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1), transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cm-people[hidden] { display: none; }
+.cm-people.is-in { opacity: 1; transform: none; }
+.cm-people-dim { margin-left: 4px; color: #8f8f8f; }
+html[data-theme="dark"] .cm-people {
+  background: #181818; color: #b5b5b5;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.02), inset 0 0 0 1px rgba(196, 196, 196, 0.05);
+}
+html[data-theme="dark"] .cm-people-dim { color: #939393; }
+@media (prefers-reduced-motion: reduce) { .cm-people { transition: none; transform: none; } }
 .cm-hero .title {
   max-width: 459px;
   margin-top: 0;

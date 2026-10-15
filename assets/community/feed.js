@@ -8,6 +8,19 @@
   // This script's ?v= (the page's asset version), for scripts loaded later.
   var ASSET_V = ((document.currentScript && document.currentScript.src) || "").replace(/^[^?]*/, "");
 
+  // ── Members pill (community.html): how many people the CRM counts, live
+  // from /stats/people. Shown once the number is in, never as a 0. ─────────
+  (function () {
+    var pill = document.getElementById("cm-people");
+    if (!pill) return;
+    fetch(C.apiUrl("/stats/people")).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.people) return;
+      document.getElementById("cm-people-count").textContent = d.people.toLocaleString("en-US");
+      pill.hidden = false;
+      requestAnimationFrame(function () { pill.classList.add("is-in"); });
+    }).catch(function () {});
+  })();
+
   // ── Tabs: the detail page's sliding-pill component (.proto-modal-tabs) ─────
   // The indicator takes the selected tab's offset and width; the first paint
   // snaps, later picks slide.
