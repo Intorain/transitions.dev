@@ -427,7 +427,7 @@
       .crm-panel { border-radius: 0; box-shadow: none; }
       .inspector { position: fixed; inset: auto 0 0 0; max-height: 80vh; background: var(--panel-bg); border-left: none;
         border-radius: 12px 12px 0 0; box-shadow: var(--panel-shadow); z-index: 30; }
-      .col-company, .col-signup, .col-fixes { display: none; }
+      .col-company, .col-signup, .col-fixes, .col-since { display: none; }
       .field { width: 100%; }
       .toolbar-end { margin-left: 0; }
     }
@@ -528,6 +528,7 @@
                 <th data-sort="name">Person<span class="arrow"></span></th>
                 <th data-sort="company" class="col-company">Company<span class="arrow"></span></th>
                 <th data-sort="plan">Plan<span class="arrow"></span></th>
+                <th data-sort="since" class="col-since" title="When the current paid plan started (an upgrade shows where it came from)">Plan since<span class="arrow"></span></th>
                 <th data-sort="agent" class="col-agent">Motion Agent<span class="arrow"></span></th>
                 <th data-sort="fixes" class="num col-fixes" title="Hosted Agent fixes">Fixes<span class="arrow"></span></th>
                 <th data-sort="builder_drafts" class="num col-builder" title="Builder drafts that finished (failed ones in the tooltip)">Drafts<span class="arrow"></span></th>
@@ -754,7 +755,7 @@
       var q = state.q.trim().toLowerCase();
       var rows = state.data.people.filter(function (p) {
         if (!inRange(p)) return false;
-        if (state.day && localDay(p[state.day.field]) !== state.day.date) return false;
+        if (state.day && localDay(p.created_at) !== state.day.date && localDay(p.first_paid) !== state.day.date && localDay(p.plan_since) !== state.day.date) return false;
         if (state.filter === "paying" && !PAYING[p.plan]) return false;
         if (state.filter === "agent" && !hasAgent(p)) return false;
         if (state.filter === "agent-fix" && !hasAgentFix(p)) return false;
@@ -769,6 +770,7 @@
         name: function (p) { return (p.name || p.email).toLowerCase(); },
         company: function (p) { return (p.company || "~").toLowerCase(); },
         plan: function (p) { return PLAN_ORDER[p.plan]; },
+        since: function (p) { return (PAYING_OR_COMP[p.plan] && p.plan_since) || ""; },
         paid: function (p) { return paidTotal(p.paid); },
         fixes: function (p) { return fixCount(p); },
         builder_drafts: function (p) { var c = p.community; return c ? (c.drafts || 0) + (c.failed || 0) / 1e3 : -1; },
@@ -968,6 +970,10 @@
             : '<span class="muted">·</span>') + "</td>" +
           '<td><div class="plan-cell"><span style="display:flex;gap:6px;align-items:center">' + planBadge(p.plan) + tags.join("") + "</span>" +
             (p.plan_detail ? '<span class="plan-detail">' + esc(p.plan_detail) + "</span>" : "") + "</div></td>" +
+          '<td class="col-since tnum">' + (p.plan_since && PAYING_OR_COMP[p.plan]
+            ? '<div class="agent-cell"><span class="agent-main">' + esc(day(p.plan_since)) + '</span>' +
+              (FROM_LABEL[p.plan_from] ? '<span class="agent-sub">' + esc(FROM_LABEL[p.plan_from]) + "</span>" : "") + "</div>"
+            : '<span class="muted">·</span>') + "</td>" +
           (function () {
             var s = hasAgent(p) ? agentSummary(p.agent) : null;
             return '<td class="col-agent">' + (s
@@ -1113,6 +1119,15 @@
       });
     }
     /* ─── Daily ─────────────────────────────────────────────── */
+    var PAYING_OR_COMP = { business: 1, pro: 1, lifetime: 1, sponsor: 1, comp: 1 };
+    var FROM_LABEL = { pro: "upgraded from Pro", lifetime: "upgraded from Lifetime", member: "joined a team" };
+    var UPG_LABEL = { "pro>business": "Pro → Business", "lifetime>business": "Lifetime → Business", "lifetime>pro": "Lifetime → Pro", "pro>lifetime": "Pro → Lifetime" };
+    function upgradeChips(by) {
+      return Object.keys(by || {}).filter(function (k) { return by[k]; }).map(function (k) {
+        var to = k.split(">")[1];
+        return '<span class="plan plan--' + esc(to) + '">' + by[k] + " " + esc(UPG_LABEL[k] || k) + "</span>";
+      }).join("");
+    }
     var PAID_ORDER = ["business", "lifetime", "pro", "sponsor"];
     function fmtDate(ymd, withDay) {
       var d = new Date(ymd + "T12:00:00");
@@ -1120,11 +1135,12 @@
     }
     function sumDays(days) {
       var t = { new_people: 0, new_free: 0, new_paid: 0, renewals: 0, churned: 0, agent_keys: 0, agent_signups: 0, agent_fixes: 0, agent_blocked: 0, made: 0, published: 0,
-        ai_drafts: 0, ai_credits_free: 0, ai_credits_paid: 0, ai_tokens_free: 0, ai_tokens_paid: 0, paid_by: {}, revenue: {} };
+        ai_drafts: 0, ai_credits_free: 0, ai_credits_paid: 0, ai_tokens_free: 0, ai_tokens_paid: 0, upgrades: 0, conversions: 0, paid_by: {}, revenue: {}, upgrades_by: {} };
       days.forEach(function (d) {
         for (var k in t) if (typeof t[k] === "number") t[k] += d[k] || 0;
         for (var p in d.paid_by) t.paid_by[p] = (t.paid_by[p] || 0) + d.paid_by[p];
         for (var c in d.revenue) t.revenue[c] = (t.revenue[c] || 0) + d.revenue[c];
+        for (var u in d.upgrades_by) t.upgrades_by[u] = (t.upgrades_by[u] || 0) + d.upgrades_by[u];
       });
       return t;
     }
@@ -1151,6 +1167,8 @@
           line("Free", t.new_free) +
           line("New paying", t.new_paid ? '<span class="mini">' + paidChips(t.paid_by) + "</span>" : "0") +
           line("Revenue", esc(paidText(t.revenue) || "$0")) +
+          line("Upgrades", t.upgrades ? '<span class="mini">' + upgradeChips(t.upgrades_by) + "</span>" : "0") +
+          line("Free to paid", t.conversions || 0) +
           line("Renewals", t.renewals) +
           line("Churned", t.churned) +
           (product === "libraries" ? "" : line("Agent signups", t.agent_signups + (t.agent_keys > t.agent_signups ? ' <span class="muted">+' + (t.agent_keys - t.agent_signups) + " keys</span>" : "")) +
@@ -1183,13 +1201,14 @@
       // Day by day, newest first.
       var cell = function (n, extra) { return '<td class="num tnum' + (n ? "" : " zero") + (extra ? " " + extra : "") + '">' + (n || "0") + "</td>"; };
       html += '<div class="table-wrap"><table class="day-table"><thead><tr>' +
-        '<th>Day</th><th class="num">New</th><th class="num">Free</th><th>New paying</th><th class="num">Revenue</th><th class="num">Renewals</th><th class="num">Churned</th>' +
+        '<th>Day</th><th class="num">New</th><th class="num">Free</th><th>New paying</th><th>Upgrades</th><th class="num">Revenue</th><th class="num">Renewals</th><th class="num">Churned</th>' +
         (product === "libraries" ? "" : '<th class="num col-agentday">Agent signups</th><th class="num col-agentday">Agent fixes</th><th class="num col-agentday">Agent active</th><th class="num">Made</th><th class="num">Published</th><th class="num">Drafts</th><th class="num" title="Builder credits used, free + paid">Credits</th>') + "</tr></thead><tbody>" +
         days.map(function (d, i) {
-          return '<tr data-day="' + esc(d.date) + '"' + (i === 0 ? ' class="is-today"' : "") + ' title="Show who joined this day">' +
+          return '<tr data-day="' + esc(d.date) + '"' + (i === 0 ? ' class="is-today"' : "") + ' title="Show who joined, paid or upgraded this day">' +
             "<td>" + esc(i === 0 ? "Today" : i === 1 ? "Yesterday" : fmtDate(d.date, true)) + "</td>" +
             cell(d.new_people) + cell(d.new_free) +
             "<td>" + (d.new_paid ? '<span class="mini">' + paidChips(d.paid_by) + "</span>" : '<span class="muted">0</span>') + "</td>" +
+            "<td>" + (d.upgrades ? '<span class="mini">' + upgradeChips(d.upgrades_by) + "</span>" : '<span class="muted">0</span>') + "</td>" +
             '<td class="num tnum' + (paidText(d.revenue) ? "" : " zero") + '">' + esc(paidText(d.revenue) || "$0") + "</td>" +
             cell(d.renewals) + cell(d.churned) +
             (product === "libraries" ? "" :
@@ -1320,7 +1339,7 @@
     function renderDayFilter() {
       var el = $("day-filter");
       if (!state.day) { el.innerHTML = ""; return; }
-      el.innerHTML = '<span class="day-chip">Joined ' + esc(fmtDate(state.day.date, true)) +
+      el.innerHTML = '<span class="day-chip">Joined, paid or upgraded ' + esc(fmtDate(state.day.date, true)) +
         '<button type="button" id="day-clear" aria-label="Clear day filter"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></span>';
       $("day-clear").addEventListener("click", function () { state.day = null; renderDayFilter(); renderRows(); });
     }
@@ -1405,7 +1424,7 @@
       var b = e.target.closest("[data-view]");
       if (b) setView(b.getAttribute("data-view"));
     });
-    // A day row opens People filtered to who joined that day.
+    // A day row opens People filtered to who joined, paid or upgraded that day.
     $("daily-view").addEventListener("click", function (e) {
       var tr = e.target.closest("tr[data-day]");
       if (!tr) return;
