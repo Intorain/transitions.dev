@@ -1654,6 +1654,23 @@
     });
     $("gate-back").addEventListener("click", function () { $("gate-token").value = ""; switchProduct("transitions"); });
 
+    // GitHub Pages lets browsers keep this page for up to 10 minutes, so a
+    // cached copy can miss the newest panels. Fetch the page fresh; if its
+    // style or script differs from what is running, reload once.
+    (function () {
+      try {
+        var styleNow = (document.querySelector("style") || {}).textContent || "";
+        var scripts = document.querySelectorAll("script:not([src])");
+        var scriptNow = (scripts[scripts.length - 1] || {}).textContent || "";
+        fetch(location.pathname + "?fresh=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (fresh) {
+          if (!fresh || (fresh.indexOf(styleNow) !== -1 && fresh.indexOf(scriptNow) !== -1)) return;
+          var mark = "crm-reloaded:" + fresh.length;
+          try { if (sessionStorage.getItem(mark)) return; sessionStorage.setItem(mark, "1"); } catch (e) {}
+          location.replace(location.pathname + "?v=" + Date.now());
+        }).catch(function () {});
+      } catch (e) {}
+    })();
+
     applyTheme();
     var saved = loadToken();
     paintProduct();
