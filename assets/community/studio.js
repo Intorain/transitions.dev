@@ -2622,12 +2622,25 @@
       var current = fresh ? null : { html: S.files.html, css: S.files.css, js: S.files.js, title: S.title, description: S.description, layout: layoutIssues.slice() };
       agentContext(text, opts.mode || S.mode).catch(function (e) { return { error: e.message || "context_too_large" }; }).then(function (context) {
         if (context && context.error) return { error: context.error };
-        aiAbort = new AbortController();
         // Switched to React for a library: say so in the request too.
         var ask = opts.libNote
           ? text + "\n\nBuild it as a React component (one TSX module) so it can use " + opts.libNote + ", keeping its look, states and motion."
           : text;
-        return C.api.generate(ask, opts.mode || S.mode, current, context, images, onEvent, picked, agentChoice(), aiAbort.signal);
+        // A connection that drops mid-draft (some networks cut a quiet
+        // stream) is tried once more before it counts as an error.
+        var tries = 0;
+        function attempt() {
+          aiAbort = new AbortController();
+          return C.api.generate(ask, opts.mode || S.mode, current, context, images, onEvent, picked, agentChoice(), aiAbort.signal).then(function (r) {
+            if (r && r.error === "network" && tries++ < 1) {
+              status.set("Connection dropped, trying again", "");
+              setWorking("Connection dropped, trying again");
+              return attempt();
+            }
+            return r;
+          });
+        }
+        return attempt();
       }).then(function (r) {
         aiAbort = null;
         status.stop();
@@ -2645,7 +2658,10 @@
         if (opts.mode && opts.mode !== S.mode) S.stash[S.mode] = before;
         // The agent on someone else's component makes it your remix.
         if (!S.owner) remixOf({ id: S.id, title: S.title, mode: S.mode, html: S.files.html, css: S.files.css, js: S.files.js, author: S.author });
-        if (fresh || S.title === "Untitled") S.title = c.title || S.title;
+        // The agent names a new component, and one that still carries a
+        // remix's default name ("Modal open/close remix").
+        var defaultName = S.remix && S.remix.kind === "library" && S.remix.title && S.title === S.remix.title + " remix";
+        if (fresh || S.title === "Untitled" || defaultName) S.title = c.title || S.title;
         if (c.description) S.description = c.description;
         S.ai = true;
         S.mode = c.mode === "react" ? "react" : "html";
@@ -2668,6 +2684,10 @@
         sayScan(r.scan);
         sayLayout = true;
         paintQuota(r.quota);
+        // A saved, unpublished draft keeps the agent's work right away, so
+        // closing the tab never loses a change the credits paid for.
+        // (Published components wait for Save changes: those go to review.)
+        if (S.id && S.owner && !S.published) save(undefined, null);
       });
     });
   }
