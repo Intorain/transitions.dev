@@ -6641,14 +6641,15 @@
               ? "Full Motion Agent: 200 hosted fixes a month, polish + revamp."
               : "Free Motion Agent: 10 hosted polish fixes a month" + (d.pro ? ", plus Pro recipe sources over MCP." : ".");
             el("acc-agent-key-block").hidden = false;
-            // Transitions UI MCP: Pro and Business only.
-            if (d.pro || d.plan === "team") {
-              var url = "https://api.transitions.dev/ui/mcp";
-              el("acc-mcp-claude").textContent = 'claude mcp add --transport http transitions-ui ' + url + ' --header "Authorization: Bearer ' + d.license + '"';
-              el("acc-mcp-codex").textContent = '[mcp_servers.transitions-ui]\ncommand = "npx"\nargs = ["-y", "mcp-remote", "' + url + '", "--header", "Authorization:${TRANSITIONS_AUTH}"]\nenv = { TRANSITIONS_AUTH = "Bearer ' + d.license + '" }';
-              el("acc-mcp-cursor").textContent = JSON.stringify({ mcpServers: { "transitions-ui": { url: url, headers: { Authorization: "Bearer " + d.license } } } }, null, 2);
-              el("acc-mcp-block").hidden = false;
-            }
+            // Transitions UI MCP: shown only while the account has Pro (a
+            // Business seat counts), read live from /me; the server checks too.
+            var url = "https://api.transitions.dev/ui/mcp";
+            el("acc-mcp-claude").textContent = 'claude mcp add --transport http transitions-ui ' + url + ' --header "Authorization: Bearer ' + d.license + '"';
+            el("acc-mcp-codex").textContent = '[mcp_servers.transitions-ui]\ncommand = "npx"\nargs = ["-y", "mcp-remote", "' + url + '", "--header", "Authorization:${TRANSITIONS_AUTH}"]\nenv = { TRANSITIONS_AUTH = "Bearer ' + d.license + '" }';
+            el("acc-mcp-cursor").textContent = JSON.stringify({ mcpServers: { "transitions-ui": { url: url, headers: { Authorization: "Bearer " + d.license } } } }, null, 2);
+            function paintMcp() { el("acc-mcp-block").hidden = !(TP.state && TP.state.resolved && TP.state.pro); }
+            paintMcp();
+            document.addEventListener("pro:me", paintMcp);
           })
           .catch(function () { /* optional block, stays hidden */ });
       })();
