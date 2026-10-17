@@ -26,6 +26,14 @@ const QUOTAS = { free: 10, paid: 200 };
 const FREE_DAILY_LIMIT = 5;
 const DEFAULT_FREE_GLOBAL_MONTHLY = 2000;
 const MAX_BODY_BYTES = 600_000;
+// Output budget per run. Big enough for a full batch of edits; a run that
+// still reaches it keeps the edits it finished (salvageEdits).
+const MAX_OUTPUT = { free: 32000, paid: 64000 };
+// The most findings one run fixes, most important first; the rest wait for
+// the next run. Runs that tried to fix everything at once (95 findings, or a
+// revamp across 30+ files) ran out of output and gave nothing back.
+const MAX_FINDINGS = { polish: 40, revamp: 15 };
+const SEVERITY_RANK = { major: 0, warn: 1, minor: 2, info: 3 };
 
 import { handleMcp } from "./mcp.mjs";
 import { BASE_RULES, MODE_RULES } from "./guidance.mjs";
@@ -87,8 +95,19 @@ async function handleFix(request, env, ctx) {
   // sent every finding in the repository, which on a large project made the
   // prompt huge and the run time out.
   const sentPaths = new Set(files.map((f) => f && f.path));
-  const findings = (body.findings || []).filter((f) => f && (f.path === "(project)" || sentPaths.has(f.path))).slice(0, 400);
   if (mode !== "polish" && mode !== "revamp") return json({ error: "bad mode" }, 400);
+  const all = (body.findings || []).filter((f) => f && (f.path === "(project)" || sentPaths.has(f.path))).slice(0, 400);
+  // This run's share: the most important findings, up to MAX_FINDINGS, and
+  // only the files they are in (fewer files, less to read and to rewrite).
+  const cap = MAX_FINDINGS[mode];
+  const findings = all
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => (SEVERITY_RANK[a.f.severity] ?? 2) - (SEVERITY_RANK[b.f.severity] ?? 2) || a.i - b.i)
+    .slice(0, cap)
+    .map((x) => x.f);
+  const deferred = all.length - findings.length;
+  const keep = new Set(findings.map((f) => f.path));
+  const runFiles = deferred && files.some((f) => keep.has(f.path)) ? files.filter((f) => keep.has(f.path)) : files;
   const shape = { mode, findings: findings.length, files: files.length, score: body.score };
   if (mode === "revamp" && isFree) {
     logEvent(env, ctx, { event: "fix_blocked", record, ...shape, status: "revamp_gate" });
@@ -132,7 +151,8 @@ async function handleFix(request, env, ctx) {
     // A failed run never counts against the quota.
     let fixed;
     try {
-      fixed = await proposeFixes(env, findings, files, mode, recipes, model, components.slice(0, 30), isFree);
+      fixed = await proposeFixes(env, findings, runFiles, mode, recipes, model,
+        components.filter((c) => !c || !c.path || runFiles.some((f) => f.path === c.path)).slice(0, 30), isFree);
     } catch (e) {
       const detail = e?.detail || e?.message || "model error";
       console.error("[fix] model call failed:", e?.status, detail);
@@ -145,7 +165,13 @@ async function handleFix(request, env, ctx) {
       await env.USAGE.put(dayKey, String(dayUsed + 1), { expirationTtl: 60 * 60 * 48 });
       await env.USAGE.put(globalKey, String(globalUsed + 1), ttl);
     }
-    logEvent(env, ctx, { event: "fix", record, ...shape, ...(fixed.skipped ? { detail: "edits skipped: " + fixed.skipped.join(", ") } : {}) });
+    if (deferred) {
+      fixed.summary = (fixed.summary ? fixed.summary + " " : "") +
+        `This run fixed the ${findings.length} most important findings; ${deferred} more remain. Run fix again to continue.`;
+      fixed.deferred = deferred;
+    }
+    const notes = [fixed.skipped ? "edits skipped: " + fixed.skipped.join(", ") : "", fixed.truncated ? "output limit, partial" : "", deferred ? "deferred " + deferred : ""].filter(Boolean);
+    logEvent(env, ctx, { event: "fix", record, ...shape, ...(notes.length ? { detail: notes.join("; ") } : {}) });
     return { status: 200, body: { ...fixed, usage: { used: used + 1, quota, plan: record.plan || "team" } } };
   };
 
@@ -163,6 +189,12 @@ function modelFailure(e, detail) {
   const counted = "Nothing was counted against your quota.";
   if (e?.kind === "too_large") {
     return { status: 413, body: { error: "too_large", detail: "This run had more code than one fix can rewrite. " + counted + " Run it again with fewer files: the CLI retries with a smaller batch on its own." } };
+  }
+  // Anthropic does not serve some regions (China, Hong Kong, Russia and
+  // others) and answers 403 "Request not allowed" there. Say so plainly
+  // instead of blaming our side. (Status 502 so every CLI shows the detail.)
+  if (e?.status === 403 && /not allowed|forbidden/i.test(detail)) {
+    return { status: 502, body: { error: "region_unavailable", detail: "Hosted AI fixes are not available in your region: our AI provider, Anthropic, does not serve it. Scans and motion scores still work, and you can fix with your own AI through the Transitions MCP. " + counted } };
   }
   if (e?.status === 401 || e?.status === 403 || /credential|authentication|api.key/i.test(detail)) {
     return { status: 503, body: { error: "service_unavailable", detail: "The fix service is temporarily unavailable on our side. " + counted + " Please try again later." } };
@@ -244,20 +276,67 @@ async function proposeFixes(env, findings, files, mode, recipes, model, componen
   ].join(" ");
 
   const user = JSON.stringify({ findings, files, ...(components.length ? { components } : {}), ...(recipes.length ? { recipes } : {}) });
-  const text = await streamMessage(env, { model, max_tokens: isFree ? 16000 : 32000, system, messages: [{ role: "user", content: user }] });
+  const { text, stop } = await streamMessage(env, { model, max_tokens: isFree ? MAX_OUTPUT.free : MAX_OUTPUT.paid, system, messages: [{ role: "user", content: user }] });
 
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) return { summary: "The model returned no changes.", files: [] };
-  let parsed;
-  try { parsed = JSON.parse(match[0]); } catch { return { summary: "The model response could not be parsed.", files: [] }; }
+  let parsed, truncated = false;
+  if (stop === "max_tokens") {
+    // Out of output: keep every edit the model finished.
+    parsed = salvageEdits(text);
+    if (!parsed) {
+      const err = new Error("output limit reached");
+      err.kind = "too_large";
+      err.detail = "max_tokens";
+      throw err;
+    }
+    truncated = true;
+  } else {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return { summary: "The model returned no changes.", files: [] };
+    try { parsed = JSON.parse(match[0]); } catch { return { summary: "The model response could not be parsed.", files: [] }; }
+  }
   const { files: changed, skipped, broken } = applyEdits(files, parsed.edits || []);
   // Older answers in the whole-file shape still work.
   for (const f of parsed.files || []) if (f && f.path && typeof f.content === "string" && !changed.some((c) => c.path === f.path)) changed.push(f);
   let summary = parsed.summary || "";
   if (skipped.length) summary += (summary ? " " : "") + `Left unchanged because an edit did not match the file exactly: ${skipped.join(", ")}.`;
   if (broken.length) summary += (summary ? " " : "") + `Left unchanged because the edit would have broken the code: ${broken.join(", ")}.`;
+  if (truncated) summary += (summary ? " " : "") + "The run hit its output limit, so only part of it was fixed. Run fix again to continue.";
   const notApplied = [...skipped, ...broken];
-  return { summary, files: changed, ...(notApplied.length ? { skipped: notApplied } : {}) };
+  return { summary, files: changed, ...(notApplied.length ? { skipped: notApplied } : {}), ...(truncated ? { truncated: true } : {}) };
+}
+
+// A response cut off by the output limit: {"summary":"...","edits":[{...},{...},{...
+// Returns { summary, edits } with every edit object that closed, or null.
+export function salvageEdits(text) {
+  const start = text.indexOf('"edits"');
+  if (start < 0) return null;
+  const open = text.indexOf("[", start);
+  if (open < 0) return null;
+  const edits = [];
+  let depth = 0, inStr = false, esc = false, objStart = -1;
+  for (let i = open + 1; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") { if (depth === 0) objStart = i; depth++; }
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0 && objStart >= 0) {
+        try { const e = JSON.parse(text.slice(objStart, i + 1)); if (e && e.path && typeof e.find === "string") edits.push(e); } catch {}
+        objStart = -1;
+      }
+    } else if (ch === "]" && depth === 0) break;
+  }
+  if (!edits.length) return null;
+  const m = text.match(/"summary"\s*:\s*"((?:\\.|[^"\\])*)"/);
+  let summary = "";
+  try { summary = m ? JSON.parse('"' + m[1] + '"') : ""; } catch {}
+  return { summary, edits };
 }
 
 // Anthropic's API sits behind an edge that cuts any response slower than 100
@@ -283,14 +362,8 @@ async function streamMessage(env, payload) {
     if (res.status === 400 && /prompt is too long|too many tokens|max_tokens/i.test(detail)) err.kind = "too_large";
     throw err;
   }
-  const { text, stop } = await readMessageStream(res.body);
-  if (stop === "max_tokens") {
-    const err = new Error("output limit reached");
-    err.kind = "too_large";
-    err.detail = "max_tokens";
-    throw err;
-  }
-  return text;
+  // The caller decides what a cut-off answer is worth (salvageEdits).
+  return await readMessageStream(res.body);
 }
 
 function json(obj, status = 200) {
