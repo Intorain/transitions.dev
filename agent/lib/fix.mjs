@@ -203,6 +203,13 @@ export async function runFix(root, result, opts) {
   }
   if (status === 403 || status === 429) {
     const err = data;
+    if (err.error === "revamp_business" && err.detail) {
+      // The service's offer, as written (plan-aware, with the upgrade link).
+      console.error(c.yellow(err.detail.split("\n")[0]));
+      for (const line of err.detail.split("\n").slice(1)) console.error(line.startsWith("Upgrade:") ? c.bold(line) : line);
+      ciSummary(err.detail.replace(/\n/g, " "));
+      return done(1, "revamp-needs-business", "revamp needs the Business plan");
+    }
     if (err.error === "revamp requires team") {
       console.error(c.yellow("Revamp mode is a Business plan feature") + " (full recipe rewrites, Pro library).");
       console.error("Your free plan includes polish mode. Upgrade at " + c.bold("transitions.dev/pro.html") + " or run without --mode revamp.");

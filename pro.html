@@ -4730,6 +4730,21 @@
           bar below the pricing card; the discount auto-applies at checkout. ─── */
     .pro-ppp { width: fit-content; max-width: 100%; margin: 0 auto; }
     .pro-ppp[hidden] { display: none; }
+    .pro-from-note {
+      width: fit-content; max-width: min(640px, calc(100% - 32px)); margin: 0 auto 20px; padding: 8px 16px;
+      border-radius: 16px; background: rgba(0, 115, 229, 0.06); color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(0, 115, 229, 0.18);
+      font-size: 13px; line-height: 19px; text-align: center; text-wrap: balance;
+    }
+    .pro-from-note[hidden] { display: none; }
+    .pro-from-note strong { font-weight: 500; }
+    html[data-theme="dark"] .pro-from-note { background: rgba(22, 81, 244, 0.14); box-shadow: inset 0 0 0 1px rgba(96, 137, 255, 0.3); }
+    /* The card the visitor came for. */
+    .pro-price-card.is-spotlight {
+      box-shadow: var(--card-shadow), inset 0 0 0 2px rgba(0, 115, 229, 0.55);
+      transition: box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    html[data-theme="dark"] .pro-price-card.is-spotlight { box-shadow: var(--card-shadow), inset 0 0 0 2px rgba(96, 137, 255, 0.6); }
     .pro-ppp-bar {
       display: flex; align-items: center; justify-content: center;
       height: 28px; padding: 0 14px; border-radius: 24px;
@@ -5659,6 +5674,9 @@
     </div>
 
     <!-- ─── Pricing cards (Free / Pro / Business) ──────────────── -->
+    <!-- Arriving from the Motion Agent's revamp offer (?from=revamp): say why
+         Business, and spotlight its card. -->
+    <p class="pro-from-note" id="pro-from-revamp" hidden>Revamp mode is part of <strong>Business</strong>: full rewrites from the Pro recipe library, 200 hosted fixes a month, and one license for your whole team.</p>
     <div class="pro-price-wrap">
       <div class="pro-price-grid">
 
@@ -7124,6 +7142,23 @@ description: Production-ready CSS
       overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && overlay.hasAttribute("data-open")) close();
+      });
+    })();
+  </script>
+  <script>
+    // ?from=revamp: the Motion Agent sent someone who asked for revamp mode.
+    (function () {
+      var q;
+      try { q = new URLSearchParams(location.search); } catch (e) { return; }
+      if (q.get("from") !== "revamp") return;
+      var note = document.getElementById("pro-from-revamp");
+      var card = document.querySelector('.pro-price-card[data-plan-card="team"]');
+      if (note) note.hidden = false;
+      if (!card) return;
+      card.classList.add("is-spotlight");
+      requestAnimationFrame(function () {
+        var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+        card.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
       });
     })();
   </script>

@@ -114,7 +114,21 @@ async function handleFix(request, env, ctx) {
   const shape = { mode, findings: findings.length, files: files.length, score: body.score };
   if (mode === "revamp" && isFree) {
     logEvent(env, ctx, { event: "fix_blocked", record, ...shape, status: "revamp_gate" });
-    return json({ error: "revamp requires team", detail: "Revamp mode (full recipe rewrites, Pro library) is part of the Business plan." }, 403);
+    // People asking for revamp are asking for a Business feature: make the
+    // offer at that moment. A new error code on purpose: CLIs up to 0.11
+    // print their own fixed line for "revamp requires team", but show this
+    // detail as written for any other 403.
+    const upgrade = "https://transitions.dev/pro.html?plan=business&from=revamp";
+    const detail = [
+      record.pro
+        ? "Revamp is part of Business. You're on Pro, which includes polish mode."
+        : "Revamp is part of Business. The free plan includes polish mode.",
+      "Business rewrites your motion from the full Pro recipe library (polish only tunes values), with 200 hosted fixes a month, the GitHub Action merge gate, and one license for your whole team (5 seats included): $59/month.",
+      record.pro ? "Sign in on the pricing page before you switch: your Pro moves into Business and the rest of this month is credited." : "",
+      "Upgrade: " + upgrade,
+      "Or run fix without --mode revamp for polish fixes now.",
+    ].filter(Boolean).join("\n");
+    return json({ error: "revamp_business", detail, upgrade }, 403);
   }
 
   const month = new Date().toISOString().slice(0, 7);
