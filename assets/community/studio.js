@@ -2546,7 +2546,22 @@
     var canTopup = code === "out_of_credits" && r.quota && r.quota.can_topup;
     if (canTopup) msg = "You're out of AI credits. Add a credit pack to keep going, or wait for the 1st.";
     say("error", C.esc(msg));
-    if (canTopup) {
+    if (code === "region_unavailable") {
+      // The AI cannot be offered here: say so, and that a paid plan can be
+      // refunded at any time (a prefilled email to us).
+      C.confirm({
+        title: "AI drafts aren't available in your region",
+        body: "Our AI provider, Anthropic, doesn't serve your region, so the agent can't build here. No credits were used. " +
+          "You can still browse, remix and edit components by hand. If you paid for a plan, you can ask for a refund anytime.",
+        ok: "Ask for a refund",
+        cancel: "Close",
+      }).then(function (v) {
+        if (v !== true) return;
+        var who = (window.TransitionsPro && TransitionsPro.state && TransitionsPro.state.email) || "";
+        location.href = "mailto:jakubja@gmail.com?subject=" + encodeURIComponent("Refund request: AI not available in my region") +
+          "&body=" + encodeURIComponent("Hi, the Builder's AI isn't available in my region, so I'd like a refund.\n\nAccount email: " + who + "\n");
+      });
+    } else if (canTopup) {
       // Pro and Business can buy a pack and carry on.
       C.topupDialog({ title: "You're out of credits", body: "Add a credit pack to keep building. Packs are used after your monthly credits and stay valid for 12 months." });
     } else if (code === "chatgpt_limit") {

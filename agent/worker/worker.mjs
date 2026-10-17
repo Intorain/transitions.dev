@@ -194,7 +194,7 @@ function modelFailure(e, detail) {
   // others) and answers 403 "Request not allowed" there. Say so plainly
   // instead of blaming our side. (Status 502 so every CLI shows the detail.)
   if (e?.status === 403 && /not allowed|forbidden/i.test(detail)) {
-    return { status: 502, body: { error: "region_unavailable", detail: "Hosted AI fixes are not available in your region: our AI provider, Anthropic, does not serve it. Scans and motion scores still work, and you can fix with your own AI through the Transitions MCP. " + counted } };
+    return { status: 502, body: { error: "region_unavailable", detail: "Hosted AI fixes are not available in your region: our AI provider, Anthropic, does not serve it. Scans and motion scores still work, and you can fix with your own AI through the Transitions MCP. " + counted + " Paid for a plan? You can ask for a refund anytime: email jakubja@gmail.com from your account address." } };
   }
   if (e?.status === 401 || e?.status === 403 || /credential|authentication|api.key/i.test(detail)) {
     return { status: 503, body: { error: "service_unavailable", detail: "The fix service is temporarily unavailable on our side. " + counted + " Please try again later." } };

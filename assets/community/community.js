@@ -1417,7 +1417,7 @@
     review_queue_full: "You have 3 components waiting for review. Publish more once one of them is reviewed.",
     publish_daily_limit: "That's today's limit for sending components to review. Try again tomorrow.",
     own_profile: "You can't report your own profile.",
-    region_unavailable: "AI drafts aren't available in your region: our AI provider, Anthropic, doesn't serve it. No credits were used. You can still browse, remix and edit components by hand.",
+    region_unavailable: "AI drafts aren't available in your region: our AI provider, Anthropic, doesn't serve it. No credits were used. Paid for a plan? You can ask for a refund anytime.",
     topup_pro_only: "Credit packs are for Pro and Business plans.",
     unknown_pack: "That credit pack isn't available.",
     prices_not_configured: "Credit packs aren't available yet. Try again soon.",
