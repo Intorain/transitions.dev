@@ -53,13 +53,15 @@ export function keepBalanced(before, after) {
 }
 
 // Collect the text of a streamed Messages API response (server-sent events).
-// Returns { text, stop }; a stream error event throws with an HTTP-like status.
+// Returns { text, stop, usage }; a stream error event throws with an HTTP-like status.
 export async function readMessageStream(body) {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
   let text = "";
   let stop = null;
+  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
+  const addUsage = (u) => { if (u) for (const k of Object.keys(usage)) if (typeof u[k] === "number") usage[k] = Math.max(usage[k], u[k]); };
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -73,7 +75,8 @@ export async function readMessageStream(body) {
       let ev;
       try { ev = JSON.parse(data); } catch { continue; }
       if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") text += ev.delta.text;
-      else if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
+      else if (ev.type === "message_start") addUsage(ev.message && ev.message.usage);
+      else if (ev.type === "message_delta") { if (ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason; addUsage(ev.usage); }
       else if (ev.type === "error") {
         const err = new Error("anthropic stream " + (ev.error && ev.error.type));
         err.status = ev.error && ev.error.type === "overloaded_error" ? 529 : ev.error && ev.error.type === "rate_limit_error" ? 429 : 500;
@@ -82,5 +85,5 @@ export async function readMessageStream(body) {
       }
     }
   }
-  return { text, stop };
+  return { text, stop, usage };
 }

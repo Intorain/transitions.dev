@@ -34,6 +34,9 @@ const MAX_OUTPUT = { free: 32000, paid: 64000 };
 // revamp across 30+ files) ran out of output and gave nothing back.
 const MAX_FINDINGS = { polish: 40, revamp: 15 };
 const SEVERITY_RANK = { major: 0, warn: 1, minor: 2, info: 3 };
+// USD per million tokens [input, output], for the cost noted on each run.
+const PRICES = { "claude-haiku-4-5-20251001": [1, 5], "claude-sonnet-5": [3, 15] };
+const ENTERPRISE = "https://transitions.dev/pro.html#enterprise";
 
 import { handleMcp } from "./mcp.mjs";
 import { BASE_RULES, MODE_RULES } from "./guidance.mjs";
@@ -120,7 +123,11 @@ async function handleFix(request, env, ctx) {
   const quota = (record.quota || (isFree ? QUOTAS.free : QUOTAS.paid)) + await monthBonus(env, license, month);
   if (used >= quota) {
     logEvent(env, ctx, { event: "fix_blocked", record, ...shape, status: "quota" });
-    return json({ error: "quota exceeded", used, quota }, 429);
+    // Out of this month's fixes: what is next, and for Business, Enterprise.
+    const detail = isFree
+      ? `You've used the ${quota} fixes in the free plan this month. They reset on the 1st. Business includes 200 a month with revamp: https://transitions.dev/pro.html`
+      : `You've used all ${quota} fixes this month. They reset on the 1st. Need more? Enterprise runs the Motion Agent without monthly limits on your own AI keys: ${ENTERPRISE} (or email jakubja@gmail.com).`;
+    return json({ error: "quota exceeded", detail, used, quota }, 429);
   }
 
   // Free-tier valves: per-day rate limit and a global monthly budget fuse.
@@ -170,7 +177,8 @@ async function handleFix(request, env, ctx) {
         `This run fixed the ${findings.length} most important findings; ${deferred} more remain. Run fix again to continue.`;
       fixed.deferred = deferred;
     }
-    const notes = [fixed.skipped ? "edits skipped: " + fixed.skipped.join(", ") : "", fixed.truncated ? "output limit, partial" : "", deferred ? "deferred " + deferred : ""].filter(Boolean);
+    const notes = [fixed.spend || "", fixed.skipped ? "edits skipped: " + fixed.skipped.join(", ") : "", fixed.truncated ? "output limit, partial" : "", deferred ? "deferred " + deferred : ""].filter(Boolean);
+    delete fixed.spend;
     logEvent(env, ctx, { event: "fix", record, ...shape, ...(notes.length ? { detail: notes.join("; ") } : {}) });
     return { status: 200, body: { ...fixed, usage: { used: used + 1, quota, plan: record.plan || "team" } } };
   };
@@ -276,7 +284,10 @@ async function proposeFixes(env, findings, files, mode, recipes, model, componen
   ].join(" ");
 
   const user = JSON.stringify({ findings, files, ...(components.length ? { components } : {}), ...(recipes.length ? { recipes } : {}) });
-  const { text, stop } = await streamMessage(env, { model, max_tokens: isFree ? MAX_OUTPUT.free : MAX_OUTPUT.paid, system, messages: [{ role: "user", content: user }] });
+  const { text, stop, usage } = await streamMessage(env, { model, max_tokens: isFree ? MAX_OUTPUT.free : MAX_OUTPUT.paid, system, messages: [{ role: "user", content: user }] });
+  const [pin, pout] = PRICES[model] || [3, 15];
+  const cost = usage ? ((usage.input_tokens + (usage.cache_creation_input_tokens || 0) * 1.25 + (usage.cache_read_input_tokens || 0) * 0.1) * pin + usage.output_tokens * pout) / 1e6 : 0;
+  const spend = usage ? `tokens ${usage.input_tokens}/${usage.output_tokens}, $${cost.toFixed(3)}` : "";
 
   let parsed, truncated = false;
   if (stop === "max_tokens") {
@@ -302,7 +313,7 @@ async function proposeFixes(env, findings, files, mode, recipes, model, componen
   if (broken.length) summary += (summary ? " " : "") + `Left unchanged because the edit would have broken the code: ${broken.join(", ")}.`;
   if (truncated) summary += (summary ? " " : "") + "The run hit its output limit, so only part of it was fixed. Run fix again to continue.";
   const notApplied = [...skipped, ...broken];
-  return { summary, files: changed, ...(notApplied.length ? { skipped: notApplied } : {}), ...(truncated ? { truncated: true } : {}) };
+  return { summary, files: changed, ...(notApplied.length ? { skipped: notApplied } : {}), ...(truncated ? { truncated: true } : {}), spend };
 }
 
 // A response cut off by the output limit: {"summary":"...","edits":[{...},{...},{...
