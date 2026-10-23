@@ -104,6 +104,8 @@
     generate: function (prompt, mode, current, context, images, onEvent, target, agent, signal) {
       return stream("/community/generate", { prompt: prompt, mode: mode, current: current || null, context: context || [], images: images || [], target: target || null, agent: agent || "sonnet" }, onEvent, signal);
     },
+    // Before a new draft: { clear } or { clear: false, questions: [{ question, options }] }.
+    clarify: function (prompt, mode, images) { return call("/community/clarify", "POST", { prompt: prompt, mode: mode, images: images || 0 }); },
     skills: function () { return call("/community/skills"); },
     saveSkill: function (skill) { return call("/community/skills", "POST", skill); },
     deleteSkill: function (id) { return call("/community/skills/" + encodeURIComponent(id) + "/delete", "POST", {}); },

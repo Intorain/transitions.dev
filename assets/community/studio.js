@@ -2150,6 +2150,8 @@
   var ICON_SEND = aiSend.innerHTML;
   var ICON_STOP = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor"/></svg>';
   var aiAbort = null;
+  // An open question sheet: a new request replaces it (see runAI).
+  var sheetCancel = null;
   function stopAI() { if (aiAbort) aiAbort.abort(); }
   function submitAI() {
     if (busy) { stopAI(); return; }
@@ -2603,6 +2605,169 @@
   }
 
   // opts.mode: build in that format instead of the current one (a conversion).
+  // Questions before a new draft (POST /community/clarify): when the request
+  // leaves open what to build, the agent asks first, one question at a time,
+  // with A to C answers and "Something else". Skip leaves a question out,
+  // Continue moves on, the last one builds. Resolves [{ question, answer }]
+  // (the answered ones) or null when the draft is stopped.
+  var ICON_PREV = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 4.5 6.5 8 10 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ICON_NEXT = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 4.5 9.5 8 6 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ICON_ENTER = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M12.5 4v3.5a1.5 1.5 0 0 1-1.5 1.5H4m0 0 2.5-2.5M4 9l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function questionSheet(questions, signal) {
+    return new Promise(function (resolve) {
+      var empty = $("st-chat-empty");
+      if (empty) empty.remove();
+      var n = questions.length, at = 0, answers = questions.map(function () { return ""; }), done = false, swapTimer = null;
+      var KEYS = "ABCD";
+      var el = document.createElement("div");
+      el.className = "st-ask";
+      el.setAttribute("role", "group");
+      el.setAttribute("aria-label", "Questions");
+      el.innerHTML =
+        '<div class="st-ask-head"><span class="st-ask-ico" aria-hidden="true">?</span><span>Questions</span></div>' +
+        '<div class="st-ask-step"></div>' +
+        '<div class="st-ask-foot">' +
+          '<div class="st-ask-pager"' + (n < 2 ? " hidden" : "") + '>' +
+            '<button type="button" class="st-ask-nav" data-go="-1" aria-label="Previous question">' + ICON_PREV + "</button>" +
+            '<span class="st-ask-count"></span>' +
+            '<button type="button" class="st-ask-nav" data-go="1" aria-label="Next question">' + ICON_NEXT + "</button>" +
+          "</div>" +
+          '<button type="button" class="cm-btn st-ask-skip">Skip</button>' +
+          '<button type="button" class="cm-btn cm-btn--primary st-ask-go"><span class="st-ask-go-label">Continue</span>' + ICON_ENTER + "</button>" +
+        "</div>";
+      log.appendChild(el);
+      var step = el.querySelector(".st-ask-step"), count = el.querySelector(".st-ask-count");
+      var go = el.querySelector(".st-ask-go"), goLabel = el.querySelector(".st-ask-go-label");
+      var prev = el.querySelector('[data-go="-1"]'), next = el.querySelector('[data-go="1"]');
+
+      // The page on show; paging builds the next one beside it.
+      var cur = null;
+      function paintState() {
+        var q = questions[at], a = answers[at];
+        cur.querySelectorAll(".st-ask-opt[data-k]").forEach(function (b) {
+          b.setAttribute("aria-checked", String(q.options[+b.getAttribute("data-k")] === a));
+        });
+        var other = cur.querySelector(".st-ask-other");
+        if (other) other.classList.toggle("is-on", !!a && q.options.indexOf(a) < 0);
+        go.disabled = !a;
+        goLabel.textContent = at === n - 1 ? "Build" : "Continue";
+        count.textContent = (at + 1) + "/" + n;
+        prev.disabled = at === 0;
+        next.disabled = at === n - 1;
+      }
+      function page() {
+        var q = questions[at], a = answers[at], custom = a && q.options.indexOf(a) < 0 ? a : "";
+        var p = document.createElement("div");
+        p.className = "st-ask-page";
+        p.innerHTML =
+          '<p class="st-ask-q" id="st-ask-q-' + at + '">' + C.esc(q.question) + "</p>" +
+          '<div class="st-ask-opts" role="radiogroup" aria-labelledby="st-ask-q-' + at + '">' +
+            q.options.map(function (o, k) {
+              return '<button type="button" class="st-ask-opt" role="radio" aria-checked="false" data-k="' + k + '">' +
+                '<span class="st-ask-key" aria-hidden="true">' + KEYS[k] + '</span><span class="st-ask-label">' + C.esc(o) + "</span></button>";
+            }).join("") +
+            '<label class="st-ask-opt st-ask-other"><span class="st-ask-key" aria-hidden="true">' + KEYS[q.options.length] + "</span>" +
+              '<input type="text" maxlength="160" placeholder="Something else…" aria-label="Something else" value="' + C.esc(custom) + '"></label>' +
+          "</div>";
+        return p;
+      }
+      function draw() {
+        step.replaceChildren();
+        cur = page();
+        step.appendChild(cur);
+        paintState();
+      }
+      // Paging: the library's Page side-by-side (P8). The question on show
+      // slides 8px out the way it leaves with a 3px blur while the next one
+      // comes in from the other side, 250ms on the smooth-out ease; the card
+      // eases to the new question's height.
+      function show(i) {
+        if (i < 0 || i >= n || i === at) return;
+        var dir = i > at ? 1 : -1;
+        at = i;
+        clearTimeout(swapTimer);
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) { draw(); return; }
+        step.querySelectorAll(".st-ask-page.is-leaving").forEach(function (x) { x.remove(); });
+        var old = cur, h0 = step.offsetHeight;
+        cur = page();
+        cur.style.setProperty("--x", dir * 8 + "px");
+        cur.classList.add("is-entering");
+        old.style.setProperty("--x", -dir * 8 + "px");
+        old.classList.add("is-leaving");
+        step.appendChild(cur);
+        paintState();
+        var h1 = cur.offsetHeight;
+        step.style.height = h0 + "px";
+        void step.offsetHeight;
+        step.style.height = h1 + "px";
+        cur.classList.remove("is-entering");
+        swapTimer = setTimeout(function () { old.remove(); step.style.height = ""; }, 260);
+      }
+      function finish(list) {
+        if (done) return;
+        done = true;
+        sheetCancel = null;
+        clearTimeout(swapTimer);
+        document.removeEventListener("keydown", onKey, true);
+        if (signal) signal.removeEventListener("abort", onAbort);
+        el.remove();
+        resolve(list);
+      }
+      function submit() {
+        finish(questions.map(function (q, i) { return { question: q.question, answer: answers[i].trim() }; })
+          .filter(function (x) { return x.answer; }));
+      }
+      function forward() { if (at < n - 1) show(at + 1); else submit(); }
+      function pick(k) {
+        answers[at] = questions[at].options[k];
+        var input = cur.querySelector(".st-ask-other input");
+        if (input) input.value = "";
+        paintState();
+        // A picked answer moves on by itself; the last one waits for Build.
+        if (at < n - 1) { var was = at; setTimeout(function () { if (at === was && !done) show(at + 1); }, 180); }
+      }
+      function onAbort() { finish(null); }
+      sheetCancel = function () { finish("replaced"); };
+      function onKey(e) {
+        if (done || !el.isConnected) return;
+        var typing = e.target && e.target.tagName === "INPUT" && el.contains(e.target);
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); submit(); return; }
+        if (e.key === "Enter" && (typing || el.contains(document.activeElement) || document.activeElement === document.body)) {
+          if (answers[at]) { e.preventDefault(); forward(); }
+          return;
+        }
+        if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); show(at + (e.key === "ArrowRight" ? 1 : -1)); return; }
+        if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+        var k = KEYS.indexOf(String(e.key).toUpperCase());
+        if (k < 0) return;
+        e.preventDefault();
+        if (k < questions[at].options.length) pick(k);
+        else { var input = cur.querySelector(".st-ask-other input"); if (input) input.focus(); }
+      }
+      el.addEventListener("click", function (e) {
+        var opt = e.target.closest(".st-ask-opt[data-k]");
+        if (opt) { pick(+opt.getAttribute("data-k")); return; }
+        var nav = e.target.closest(".st-ask-nav");
+        if (nav && !nav.disabled) { show(at + +nav.getAttribute("data-go")); return; }
+        if (e.target.closest(".st-ask-skip")) { answers[at] = ""; forward(); return; }
+        if (e.target.closest(".st-ask-go") && !go.disabled) forward();
+      });
+      el.addEventListener("input", function (e) {
+        if (!e.target.matches(".st-ask-other input")) return;
+        answers[at] = e.target.value;
+        paintState();
+      });
+      document.addEventListener("keydown", onKey, true);
+      if (signal) signal.addEventListener("abort", onAbort);
+      draw();
+      log.scrollTop = log.scrollHeight;
+      // Keys work at once (A to D, Enter, Escape) without a ring on an answer.
+      el.tabIndex = -1;
+      el.focus({ preventScroll: true });
+    });
+  }
+
   function runAI(text, images, opts) {
     images = images || [];
     opts = opts || {};
@@ -2614,6 +2779,7 @@
       }
     }
     if ((!text && !images.length) || busy) return;
+    if (sheetCancel) sheetCancel();
     C.withAccount(function () {
       var fresh = isStarter() || (!S.files.html.trim() && !S.files.js.trim());
       if (!text) text = fresh ? "Build the component in the attached image." : "Update the component to match the attached image.";
@@ -2641,6 +2807,34 @@
         var ask = opts.libNote
           ? text + "\n\nBuild it as a React component (one TSX module) so it can use " + opts.libNote + ", keeping its look, states and motion."
           : text;
+        // A new component whose request leaves open what to build: the
+        // agent asks first (questionSheet), so the draft is not a guess.
+        function clarified() {
+          if (!fresh || opts.asked || images.length) return Promise.resolve(ask);
+          aiAbort = new AbortController();
+          var abort = aiAbort.signal;
+          var timeout = new Promise(function (res) { setTimeout(function () { res({ clear: true }); }, 9000); });
+          return Promise.race([C.api.clarify(text, opts.mode || S.mode, images.length), timeout]).then(function (q) {
+            if (abort.aborted) return null;
+            if (!q || q.clear || !q.questions || !q.questions.length) return ask;
+            // Waiting on the person, not working: no stop button, no
+            // working mark on the preview, the composer free.
+            status.stop();
+            aiAbort = null;
+            setBusy(false);
+            return questionSheet(q.questions, abort).then(function (list) {
+              if (list === null || list === "replaced") return list;
+              setBusy(true);
+              if (list.length) {
+                say("applied", list.map(function (x) { return C.esc(x.question) + " <strong>" + C.esc(x.answer) + "</strong>"; }).join("\n"));
+              }
+              status = thinking();
+              return list.length
+                ? ask + "\n\nAnswers to the questions about this request:\n" + list.map(function (x) { return "- " + x.question + " " + x.answer; }).join("\n")
+                : ask;
+            });
+          });
+        }
         // A connection that drops mid-draft (some networks cut a quiet
         // stream) is tried once more before it counts as an error.
         var tries = 0;
@@ -2655,8 +2849,15 @@
             return r;
           });
         }
-        return attempt();
+        return clarified().then(function (asked) {
+          if (asked === null) return { error: "stopped" };
+          if (asked === "replaced") return { error: "replaced" };
+          ask = asked;
+          return attempt();
+        });
       }).then(function (r) {
+        // A new request took over from the question sheet: it owns the state now.
+        if (r && r.error === "replaced") return;
         aiAbort = null;
         status.stop();
         setBusy(false);

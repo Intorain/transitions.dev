@@ -1409,6 +1409,116 @@ html[data-theme="dark"] .st-chat-copy:hover { background: rgba(255, 255, 255, 0.
 .st-chat-msg[data-role="error"] { align-self: stretch; padding-left: 0; padding-right: 0; color: #e2857a; }
 html:not([data-theme="dark"]) .st-chat-msg[data-role="error"] { color: #c4290f; }
 
+/* Questions before a new draft (studio.js questionSheet): a raised card in
+   the chat, one question at a time, lettered answers, Skip and Continue. */
+.st-ask {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--card-bg, #fff);
+  /* The ring sits inside: the chat log scrolls, so it would clip an outer one. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+html[data-theme="dark"] .st-ask { background: #1b1b1b; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.st-ask:focus { outline: none; }
+.st-ask-head { display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text); }
+.st-ask-ico { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--text-muted); color: var(--card-bg, #fff); font: 600 11px/1 var(--font-sans); }
+html[data-theme="dark"] .st-ask-ico { color: #1b1b1b; }
+/* Paging between questions: Page side-by-side (P8), 8px, 3px blur, 250ms. */
+.st-ask-step { position: relative; transition: height 250ms cubic-bezier(0.22, 1, 0.36, 1); }
+.st-ask-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1), transform 250ms cubic-bezier(0.22, 1, 0.36, 1), filter 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.st-ask-page.is-entering { opacity: 0; transform: translateX(var(--x, 8px)); filter: blur(3px); transition: none; }
+.st-ask-page.is-leaving { position: absolute; top: 0; left: 0; right: 0; opacity: 0; transform: translateX(var(--x, -8px)); filter: blur(3px); pointer-events: none; }
+.st-ask-q { margin: 0; font-size: 13px; line-height: 20px; font-weight: 500; color: var(--text); text-wrap: pretty; }
+.st-ask-opts { display: flex; flex-direction: column; gap: 4px; }
+.st-ask-opt {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 10px 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: 400 13px/20px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 150ms cubic-bezier(0.22, 1, 0.36, 1), transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-theme="dark"] .st-ask-opt { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
+@media (hover: hover) and (pointer: fine) { .st-ask-opt:hover { background: var(--chip-bg); } }
+.st-ask-opt:active:not(.st-ask-other) { transform: scale(0.99); }
+.st-ask-opt[aria-checked="true"], .st-ask-other.is-on { background: var(--chip-bg); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16); }
+html[data-theme="dark"] .st-ask-opt[aria-checked="true"], html[data-theme="dark"] .st-ask-other.is-on { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.st-ask-opt:focus-visible, .st-ask-other:focus-within { outline: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16), 0 0 0 2px var(--accent); }
+.st-ask-key {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--chip-bg);
+  color: var(--text-muted);
+  font: 500 11px/1 var(--font-sans);
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), color 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* On a hovered row the key steps one shade darker, so it stays visible on the row's fill. */
+@media (hover: hover) and (pointer: fine) { .st-ask-opt:hover .st-ask-key { background: rgba(0, 0, 0, 0.08); } html[data-theme="dark"] .st-ask-opt:hover .st-ask-key { background: rgba(255, 255, 255, 0.12); } }
+.st-ask-opt[aria-checked="true"] .st-ask-key, .st-ask-other.is-on .st-ask-key { background: var(--text); color: var(--card-bg, #fff); }
+html[data-theme="dark"] .st-ask-opt[aria-checked="true"] .st-ask-key, html[data-theme="dark"] .st-ask-other.is-on .st-ask-key { color: #0d0d0d; }
+.st-ask-label { min-width: 0; text-wrap: pretty; }
+.st-ask-other { cursor: text; }
+.st-ask-other input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--text);
+  font: 400 13px/20px var(--font-sans);
+}
+.st-ask-other input::placeholder { color: var(--text-subtle); }
+.st-ask-foot { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.st-ask-pager { display: flex; align-items: center; gap: 2px; font-size: 12px; line-height: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.st-ask-count { min-width: 26px; text-align: center; }
+.st-ask-nav {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.st-ask-nav svg { width: 16px; height: 16px; }
+@media (hover: hover) and (pointer: fine) { .st-ask-nav:hover:not(:disabled) { background: var(--chip-bg); color: var(--text); } }
+.st-ask-nav:disabled { opacity: 0.4; cursor: default; }
+.st-ask-foot .cm-btn { height: 30px; padding: 0 12px; }
+.st-ask-skip { margin-left: auto; }
+.st-ask-go { padding: 0 10px 0 12px; gap: 4px; }
+.st-ask-go svg { width: 14px; height: 14px; opacity: 0.7; }
+@media (prefers-reduced-motion: reduce) {
+  .st-ask-step, .st-ask-page, .st-ask-opt, .st-ask-key { transition: none; }
+  .st-ask-opt:active:not(.st-ask-other) { transform: none; }
+}
+
 /* Pending turn: the P28 thinking-states line (shimmer + cross-blur swap). */
 .st-chat-thinking {
   --think-base: #7c7c7c;
