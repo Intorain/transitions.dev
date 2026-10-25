@@ -572,8 +572,126 @@ html[data-theme="dark"] {
     margin-left: calc((100% - var(--w)) / 2); margin-right: calc((100% - var(--w)) / 2);
   }
 }
-/* Phones: just "Components", so the heading and the sort tabs share one row. */
-@media (max-width: 639px) { .cm-feed-title-more { display: none; } }
+/* Feed tools (feed.js): framework chips as on the Library page, a search box
+   in the sign-in field's style, and a sort and time menu (the nav's menu). */
+.cm-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+/* The heading on its own line; under it one row at every width: the type
+   chips, search and sort. The chips take what is left and scroll sideways,
+   fading at the edge that has more (feed.js sets data-more). */
+.cm-feed-head { flex-wrap: wrap; row-gap: 16px; }
+.cm-feed-head h2 { flex: 1 1 100%; }
+.cm-chips {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* room for the chips' 3px shadow inside the scroll box */
+  padding: 4px 4px 6px;
+  margin: -4px -4px -6px;
+}
+.cm-chips::-webkit-scrollbar { display: none; }
+.cm-chip { flex: none; }
+.cm-chips[data-more="end"] { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+.cm-chips[data-more="start"] { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent); }
+.cm-chips[data-more="both"] { -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
+.cm-tools { flex: none; }
+.cm-chip, .cm-sort-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 48px;
+  background: #fff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), inset 0 -1px 0 0 rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(196, 196, 196, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font: 500 13px/1.4 var(--font-sans);
+  color: rgba(38, 38, 38, 0.8);
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), color 150ms cubic-bezier(0.22, 1, 0.36, 1), transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) and (pointer: fine) { .cm-chip:hover, .cm-sort-btn:hover { background: #f7f7f7; } }
+.cm-chip:active, .cm-sort-btn:active { transform: scale(0.97); }
+.cm-chip[aria-selected="true"], .cm-sort-btn[aria-expanded="true"] { background: #f1f1f1; color: #080808; }
+.cm-sort-btn { padding: 0 10px 0 14px; color: var(--text); }
+.cm-sort-btn svg { width: 16px; height: 16px; flex: none; color: var(--text-muted); }
+html[data-theme="dark"] .cm-chip, html[data-theme="dark"] .cm-sort-btn {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(251, 251, 251, 0.8);
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+@media (hover: hover) and (pointer: fine) { html[data-theme="dark"] .cm-chip:hover, html[data-theme="dark"] .cm-sort-btn:hover { background: rgba(255, 255, 255, 0.08); } }
+html[data-theme="dark"] .cm-chip[aria-selected="true"], html[data-theme="dark"] .cm-sort-btn[aria-expanded="true"] { background: rgba(255, 255, 255, 0.14); color: #fbfbfb; }
+.cm-chip:focus-visible, .cm-sort-btn:focus-visible { outline: 2px solid var(--text-muted); outline-offset: 2px; }
+.cm-sort-anchor { flex: none; }
+.cm-sort-ico { display: none; }
+
+.cm-sort-menu { width: 180px; }
+/* The search box: the top bar's search pill (.nav-search), focused like the
+   sign-in field (a 1.5px dark gray line). */
+.cm-search { position: relative; display: flex; align-items: center; width: clamp(160px, 18vw, 240px); height: 36px; flex: none; }
+.cm-search > svg { position: absolute; left: 12px; width: 16px; height: 16px; color: #838383; pointer-events: none; }
+html[data-theme="dark"] .cm-search > svg { color: #9a9a9a; }
+.cm-search input {
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 34px 0 36px;
+  border: 0;
+  border-radius: 50px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--text);
+  font: 500 13px/16px var(--font-sans);
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 120ms ease;
+}
+@media (hover: hover) and (pointer: fine) { .cm-search input:hover { background: rgba(0, 0, 0, 0.06); } }
+.cm-search input::-webkit-search-cancel-button { display: none; }
+.cm-search input::placeholder { color: #838383; }
+.cm-search input:focus { background: rgba(0, 0, 0, 0.03); box-shadow: inset 0 0 0 1.5px #585858; }
+html[data-theme="dark"] .cm-search input { background: rgba(255, 255, 255, 0.05); }
+html[data-theme="dark"] .cm-search input::placeholder { color: #9a9a9a; }
+@media (hover: hover) and (pointer: fine) { html[data-theme="dark"] .cm-search input:hover { background: rgba(255, 255, 255, 0.09); } }
+html[data-theme="dark"] .cm-search input:focus { background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1.5px #a5a5a5; }
+@media (max-width: 767px), (pointer: coarse) { .cm-search input { font-size: 16px; } }
+.cm-search-clear {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #828282;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.cm-search-clear[hidden] { display: none; }
+.cm-search-clear svg { width: 14px; height: 14px; }
+@media (hover: hover) and (pointer: fine) { .cm-search-clear:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); } html[data-theme="dark"] .cm-search-clear:hover { background: rgba(255, 255, 255, 0.08); } }
+button.cm-link { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+/* Narrower screens: the heading and the menu on the first row, search and
+   chips below. */
+/* Phones: the heading, then search and sort on one row (the search takes
+   the room), then the chips in one scrolling row, edge to edge. */
+@media (max-width: 767px) {
+  .cm-feed-head { row-gap: 12px; }
+  .cm-tools { flex: 1 1 100%; }
+  .cm-search { flex: 1 1 auto; width: auto; }
+  .cm-chips { order: 3; flex: 1 1 100%; margin: -4px -16px -6px; padding: 4px 16px 6px; scroll-padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .cm-chip, .cm-sort-btn { transition: background-color 150ms ease, color 150ms ease; } .cm-chip:active, .cm-sort-btn:active { transform: none; } }
 .cm-feed .cards { justify-content: start; }
 .cm-more { display: flex; justify-content: center; margin-top: 28px; }
 .cm-empty {
@@ -2906,7 +3024,7 @@ html[data-theme="dark"] .st-mod--review a { color: #6fb1ff; }
 /* The Community hero, about 30% more compact than the other heroes. */
 .cm-hero--feed { padding-top: 32px; padding-bottom: 0; }
 .cm-hero--feed .cm-hero-actions { margin-top: 24px; }
-.cm-hero--feed + .cm-feed { margin-top: 24px; }
+.cm-hero--feed + .cm-feed { margin-top: 60px; }
 .cm-hero-actions { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
 /* Builder: your recent projects under the composer. */
 .cm-recent { margin-top: 56px; }

@@ -2124,7 +2124,7 @@
       .nav-pill { padding: 0 9px; }
     }
   </style>
-  <link rel="stylesheet" href="assets/community/community.css?v=259" />
+  <link rel="stylesheet" href="assets/community/community.css?v=265" />
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -2302,11 +2302,38 @@
     <section class="cm-feed" aria-labelledby="cm-feed-title">
       <div class="cm-feed-head">
         <h2 id="cm-feed-title">Components<span class="cm-feed-title-more"> from community</span></h2>
-        <!-- The detail page's tab component (sliding pill). -->
-        <div class="proto-modal-tabs cm-sort" id="cm-sort" role="tablist" aria-label="Sort">
-          <span class="proto-modal-tabs-indicator" aria-hidden="true"></span>
-          <button type="button" class="proto-modal-tab" role="tab" data-sort="popular" aria-selected="true" title="Most liked">Popular</button>
-          <button type="button" class="proto-modal-tab" role="tab" data-sort="recent" aria-selected="false">Recent</button>
+        <div class="cm-chips" id="cm-types" role="tablist" aria-label="Component type">
+          <button type="button" class="cm-chip" role="tab" data-type="" aria-selected="true">All</button>
+          <button type="button" class="cm-chip" role="tab" data-type="cards" aria-selected="false">Cards</button>
+          <button type="button" class="cm-chip" role="tab" data-type="forms" aria-selected="false">Forms</button>
+          <button type="button" class="cm-chip" role="tab" data-type="charts" aria-selected="false">Charts</button>
+          <button type="button" class="cm-chip" role="tab" data-type="media" aria-selected="false">Media</button>
+          <button type="button" class="cm-chip" role="tab" data-type="navigation" aria-selected="false">Navigation</button>
+          <button type="button" class="cm-chip" role="tab" data-type="controls" aria-selected="false">Controls</button>
+          <button type="button" class="cm-chip" role="tab" data-type="notifications" aria-selected="false">Notifications</button>
+        </div>
+        <!-- Search, framework and sort (feed.js): the Library page's chips and
+             sort menu, and the sign-in field's search box. -->
+        <div class="cm-tools" id="cm-tools">
+          <label class="cm-search">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M7.25 12.5a5.25 5.25 0 1 0 0-10.5 5.25 5.25 0 0 0 0 10.5ZM14 14l-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <input type="search" id="cm-q" placeholder="Search" aria-label="Search components" autocomplete="off" spellcheck="false" maxlength="60" />
+            <button type="button" class="cm-search-clear" id="cm-q-clear" aria-label="Clear search" hidden><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 5l6 6M11 5l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+          </label>
+          <div class="st-menu-anchor cm-sort-anchor">
+            <button type="button" class="cm-sort-btn" id="cm-sort-btn" aria-haspopup="menu" aria-expanded="false"><svg class="cm-sort-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 3.33H12.67V4.67H2V3.33ZM12.67 6.67V11.06L14 9.72L14.94 10.67L12 13.61L9.06 10.67L10 9.72L11.33 11.06V6.67H12.67ZM2 7.33H8V8.67H2V7.33ZM2 11.33H6.67V12.67H2V11.33Z" fill="currentColor"/></svg><span id="cm-sort-label">Most liked</span><svg class="cm-sort-chev" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4.5 6 8 9.5 11.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div class="tl-menu t-dropdown cm-sort-menu" id="cm-sort-menu" data-origin="top-right" role="menu" aria-label="Sort and time">
+              <p class="tl-menu-group">Sort by</p>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-sort="popular" aria-checked="true"><span class="tl-menu-item-label">Most liked</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-sort="viewed" aria-checked="false"><span class="tl-menu-item-label">Most viewed</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-sort="remixed" aria-checked="false"><span class="tl-menu-item-label">Most remixed</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-sort="recent" aria-checked="false"><span class="tl-menu-item-label">Newest</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+              <p class="tl-menu-group">Published</p>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-since="" aria-checked="true"><span class="tl-menu-item-label">Any time</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-since="week" aria-checked="false"><span class="tl-menu-item-label">Past week</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+            <button type="button" class="tl-menu-item" role="menuitemradio" data-since="month" aria-checked="false"><span class="tl-menu-item-label">Past month</span><span class="tl-menu-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="cards" id="cm-grid" aria-live="polite"></div>
@@ -2949,8 +2976,8 @@
   <!-- Pro platform client: wires Get access / Sign in / account state to the API. -->
   <script src="assets/pro-client.js?v=70" defer></script>
 
-  <script src="assets/community/community.js?v=251" defer></script>
-  <script src="assets/community/feed.js?v=153" defer></script>
+  <script src="assets/community/community.js?v=253" defer></script>
+  <script src="assets/community/feed.js?v=158" defer></script>
   <script src="assets/brand-mark.js?v=4" defer></script>
   <script src="assets/nav-products.js?v=17" defer></script>
 </body>

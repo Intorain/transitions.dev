@@ -460,7 +460,17 @@
     // ── Feed ────────────────────────────────────────────────────────────────────
     var grid = document.getElementById("cm-grid");
     var more = document.getElementById("cm-more");
-    var sort = "popular"; // Most viewed first
+    var SORTS = { popular: "Most liked", viewed: "Most viewed", remixed: "Most remixed", recent: "Newest" };
+    var SINCE = { week: "Past week", month: "Past month" };
+    var TYPES = { cards: 1, forms: 1, charts: 1, media: 1, navigation: 1, controls: 1, notifications: 1 };
+    // Filters live in the address (?q=&mode=&sort=&since=), so a search can be shared.
+    var params = new URLSearchParams(location.search);
+    var sort = SORTS[params.get("sort")] ? params.get("sort") : "popular";
+    var filters = {
+      q: (params.get("q") || "").slice(0, 60),
+      type: TYPES[params.get("type")] ? params.get("type") : "",
+      since: SINCE[params.get("since")] ? params.get("since") : "",
+    };
     var next = 0;
     var loading = false;
     var seq = 0;
@@ -480,7 +490,7 @@
       loading = true;
       if (reset) { next = 0; grid.innerHTML = ghosts(6); more.hidden = true; }
       more.disabled = true;
-      C.api.feed(sort, next).then(function (r) {
+      C.api.feed(sort, next, filters).then(function (r) {
         if (my !== seq) return;
         loading = false;
         more.disabled = false;
@@ -490,7 +500,9 @@
           return;
         }
         if (!r.items.length && !grid.children.length) {
-          grid.innerHTML = '<div class="cm-empty"><strong>Nothing here yet.</strong>Be the first: <a class="cm-link" href="builder.html">build a component</a> and publish it.</div>';
+          grid.innerHTML = filtered()
+            ? '<div class="cm-empty"><strong>No components match.</strong>Try other words or <button type="button" class="cm-link" data-clear-filters>clear the filters</button>.</div>'
+            : '<div class="cm-empty"><strong>Nothing here yet.</strong>Be the first: <a class="cm-link" href="builder.html">build a component</a> and publish it.</div>';
         }
         r.items.forEach(function (c, i) {
           var el = C.card(c);
@@ -502,10 +514,79 @@
       });
     }
 
-    tabs(document.getElementById("cm-sort"), "data-sort", function (s) {
-      sort = s;
-      load(true);
+    // ── Search, framework, sort and time ──────────────────────────────────────
+    var qInput = document.getElementById("cm-q");
+    var qClear = document.getElementById("cm-q-clear");
+    var sortBtn = document.getElementById("cm-sort-btn");
+    var sortMenu = document.getElementById("cm-sort-menu");
+    var sortLabel = document.getElementById("cm-sort-label");
+    var chips = Array.prototype.slice.call(document.querySelectorAll("#cm-types .cm-chip"));
+    function filtered() { return !!(filters.q || filters.type || filters.since); }
+    function paintTools() {
+      qInput.value = filters.q;
+      qClear.hidden = !filters.q;
+      chips.forEach(function (c) { c.setAttribute("aria-selected", String(c.getAttribute("data-type") === filters.type)); });
+      sortMenu.querySelectorAll("[data-sort]").forEach(function (o) { o.setAttribute("aria-checked", String(o.getAttribute("data-sort") === sort)); });
+      sortMenu.querySelectorAll("[data-since]").forEach(function (o) { o.setAttribute("aria-checked", String(o.getAttribute("data-since") === filters.since)); });
+      sortLabel.textContent = SORTS[sort];
+    }
+    function remember() {
+      var q = new URLSearchParams(location.search);
+      [["q", filters.q], ["type", filters.type], ["mode", ""], ["since", filters.since], ["sort", sort === "popular" ? "" : sort]].forEach(function (kv) {
+        if (kv[1]) q.set(kv[0], kv[1]); else q.delete(kv[0]);
+      });
+      var s = q.toString();
+      history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + location.hash);
+    }
+    function refresh() { paintTools(); remember(); load(true); }
+    var typing = null;
+    qInput.addEventListener("input", function () {
+      qClear.hidden = !qInput.value;
+      clearTimeout(typing);
+      typing = setTimeout(function () {
+        var q = qInput.value.replace(/\s+/g, " ").trim();
+        if (q === filters.q) return;
+        filters.q = q;
+        refresh();
+      }, 250);
     });
+    qInput.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && qInput.value) { e.stopPropagation(); qInput.value = ""; qInput.dispatchEvent(new Event("input")); }
+    });
+    qClear.addEventListener("click", function () { qInput.value = ""; qInput.focus(); clearTimeout(typing); filters.q = ""; refresh(); });
+    chips.forEach(function (c) {
+      c.addEventListener("click", function () {
+        var t = c.getAttribute("data-type");
+        if (t === filters.type) return;
+        filters.type = t;
+        refresh();
+      });
+    });
+    var setMenu = C.dropdown(sortBtn, sortMenu);
+    sortMenu.addEventListener("click", function (e) {
+      var o = e.target.closest(".tl-menu-item");
+      if (!o) return;
+      if (o.hasAttribute("data-sort")) sort = o.getAttribute("data-sort");
+      else filters.since = o.getAttribute("data-since");
+      setMenu(false);
+      refresh();
+    });
+    grid.addEventListener("click", function (e) {
+      if (!e.target.closest("[data-clear-filters]")) return;
+      filters = { q: "", type: "", since: "" };
+      refresh();
+    });
+    // The chips scroll sideways when the row is short: fade the side with more.
+    var chipRow = document.getElementById("cm-types");
+    function edges() {
+      var max = chipRow.scrollWidth - chipRow.clientWidth;
+      var x = chipRow.scrollLeft;
+      chipRow.setAttribute("data-more", max <= 1 ? "" : x <= 1 ? "end" : x >= max - 1 ? "start" : "both");
+    }
+    chipRow.addEventListener("scroll", edges, { passive: true });
+    window.addEventListener("resize", edges);
+    edges();
+    paintTools();
     more.addEventListener("click", function () { load(false); });
     load(true);
   })();

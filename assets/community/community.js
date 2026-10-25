@@ -77,7 +77,15 @@
   }
 
   var api = {
-    feed: function (sort, offset) { return call("/community/feed?sort=" + (sort || "recent") + "&offset=" + (offset || 0)); },
+    // filters: { q, type: "cards" | "forms" | ..., mode: "html" | "react", since: "week" | "month" }.
+    feed: function (sort, offset, filters) {
+      var f = filters || {}, qs = "?sort=" + (sort || "recent") + "&offset=" + (offset || 0);
+      if (f.q) qs += "&q=" + encodeURIComponent(f.q);
+      if (f.mode) qs += "&mode=" + encodeURIComponent(f.mode);
+      if (f.type) qs += "&type=" + encodeURIComponent(f.type);
+      if (f.since) qs += "&since=" + encodeURIComponent(f.since);
+      return call("/community/feed" + qs);
+    },
     // view: true counts a visit (the Studio opening it); remix loads pass nothing.
     get: function (id, view) { return call("/community/c/" + encodeURIComponent(id) + (view ? "?view=1" : "")); },
     profile: function (handle) { return call("/community/u/" + encodeURIComponent(handle)); },
