@@ -506,6 +506,7 @@
       <div id="agent-band"></div>
       <div id="builder-band"></div>
       <div id="studio-band"></div>
+      <div id="free-band"></div>
       <div id="daily-view" hidden></div>
       <div id="errors-view" hidden></div>
       <div id="builder-view" hidden></div>
@@ -535,6 +536,7 @@
                 <th data-sort="builder_credits" class="num col-builder" title="Builder credits spent (1 credit = $0.01 of AI)">Credits<span class="arrow"></span></th>
                 <th data-sort="builder_last" class="col-builder" title="Last Builder draft or component">Last used<span class="arrow"></span></th>
                 <th data-sort="community" class="col-community" title="Community components and Builder drafts">Community<span class="arrow"></span></th>
+                <th data-sort="via" class="col-studio" title="How a free account signed up, and model downloads">Signed up via<span class="arrow"></span></th>
                 <th data-sort="studio" class="col-studio" title="Studio agent requests this month">Studio<span class="arrow"></span></th>
                 <th data-sort="studio_credits" class="num col-studio" title="Studio credits used this month (1 credit = $0.01 of AI)">Credits<span class="arrow"></span></th>
                 <th data-sort="errors" class="num col-errors" title="Errors in the last 30 days (Builder and Motion Agent)">Errors<span class="arrow"></span></th>
@@ -595,6 +597,7 @@
       { id: "agent-fix", label: "Agent fixes" },
       { id: "makers", label: "Makers" },
       { id: "studio", label: "Studio" },
+      { id: "downloads", label: "Downloads" },
       { id: "free", label: "Free" }
     ];
     var PAYING = { business: 1, pro: 1, lifetime: 1, sponsor: 1 };
@@ -643,6 +646,14 @@
     // Anyone who used the Builder (even if every draft failed) or made a component.
     // Libraries.dev Studio credits: 1 credit = $0.01 of AI, same as Transitions.
     function studioCredits(usd) { return Math.round((usd || 0) * 100); }
+    // Libraries.dev free accounts: users.signup_source ("site", "model:<id>").
+    function SOURCE_LABEL(src) {
+      if (!src) return "";
+      if (src === "site") return "Site sign-up";
+      var m = /^model:(.+)$/.exec(src);
+      return m ? "Model: " + m[1].charAt(0).toUpperCase() + m[1].slice(1) : src;
+    }
+    function hasDownload(p) { return !!(p.downloads && p.downloads.n); }
     function hasStudio(p) { var s = p.studio; return !!(s && (s.requests_month || s.requests_prev_month || s.lifetime_usd)); }
     function isMaker(p) { var c = p.community; return !!(c && (c.made || c.drafts || c.failed)); }
     function hasAgent(p) { return !!(p.agent && (p.agent.key || p.agent.last_used)); }
@@ -761,7 +772,8 @@
         if (state.filter === "agent-fix" && !hasAgentFix(p)) return false;
         if (state.filter === "makers" && !isMaker(p)) return false;
         if (state.filter === "studio" && !hasStudio(p)) return false;
-        if (state.filter !== "all" && state.filter !== "paying" && state.filter !== "agent" && state.filter !== "agent-fix" && state.filter !== "makers" && state.filter !== "studio" && p.plan !== state.filter) return false;
+        if (state.filter === "downloads" && !hasDownload(p)) return false;
+        if (state.filter !== "all" && state.filter !== "paying" && state.filter !== "agent" && state.filter !== "agent-fix" && state.filter !== "makers" && state.filter !== "studio" && state.filter !== "downloads" && p.plan !== state.filter) return false;
         if (!q) return true;
         return [p.name, p.email, p.company, p.country, p.plan, p.community && p.community.handle].some(function (v) { return v && String(v).toLowerCase().indexOf(q) !== -1; });
       });
@@ -778,6 +790,7 @@
         builder_last: function (p) { var c = p.community; return (c && c.last_at) || ""; },
         errors: function (p) { var e = p.errors; return e ? e.count * 1e3 + e.count_7d : 0; },
         studio: function (p) { var s = p.studio; return s ? s.requests_month * 1e3 + s.requests_prev_month : -1; },
+        via: function (p) { return (p.downloads ? p.downloads.n * 1e3 : 0) + (p.signup_source ? 1 : 0); },
         studio_credits: function (p) { var s = p.studio; return s ? s.usd_month * 1e3 + s.usd_prev_month : -1; },
         community: function (p) { var c = p.community; return c ? c.pending * 1e6 + c.live * 1e3 + c.made + c.drafts / 1e3 : -1; },
         agent: function (p) { var a = p.agent; return a ? (a.fixes_month * 1e6 + (a.fixes_total || 0) * 1e3 + (a.last_used ? 1 : 0) + (a.key ? 0.5 : 0)) : -1; },
@@ -882,6 +895,25 @@
           return '<div class="stat"><span class="stat-label">' + esc(c.label) + '</span><span class="stat-value">' + esc(c.value) + "</span>" + (c.html || "") + '<span class="stat-sub">' + esc(c.sub) + "</span></div>";
         }).join("") + "</div>";
     }
+    function renderFree() {
+      var el = $("free-band");
+      var f = state.data.free;
+      if (!f) { el.innerHTML = ""; return; }
+      var src = Object.keys(f.by_source || {}).sort(function (a, b) { return f.by_source[b] - f.by_source[a]; })
+        .map(function (k) { return f.by_source[k] + " " + SOURCE_LABEL(k).replace(/^Model: /, "").replace("Site sign-up", "site"); }).join(" · ");
+      var models = Object.keys(f.by_model || {}).map(function (m) { return f.by_model[m] + " " + m; }).join(" · ");
+      var paidFromFree = state.data.people.filter(function (p) { return p.signup_source && PAYING[p.plan]; }).length;
+      var cells = [
+        { label: "Free accounts", value: num(f.accounts), sub: src || "none yet" },
+        { label: "Model downloads", value: num(f.downloads), sub: num(f.downloads_30d) + " in the last 30 days" + (models ? " · " + models : "") },
+        { label: "Downloaders", value: num(f.downloaders), sub: f.accounts ? Math.round(f.downloaders / f.accounts * 100) + "% of free accounts" : "" },
+        { label: "Free to paid", value: num(paidFromFree), sub: f.accounts ? Math.round(paidFromFree / f.accounts * 100) + "% of free accounts now pay" : "" }
+      ];
+      el.innerHTML = '<div class="band-label"><strong>Libraries.dev free accounts</strong><span>model downloads and site sign-ups</span></div>' +
+        '<div class="stats stats--agent stats--four">' + cells.map(function (c) {
+          return '<div class="stat"><span class="stat-label">' + esc(c.label) + '</span><span class="stat-value">' + esc(c.value) + '</span><span class="stat-sub">' + esc(c.sub) + "</span></div>";
+        }).join("") + "</div>";
+    }
     function renderStudio() {
       var el = $("studio-band");
       var s = state.data.studio;
@@ -938,8 +970,9 @@
         makers: list.filter(isMaker).length
       };
       count.studio = list.filter(hasStudio).length;
+      count.downloads = list.filter(hasDownload).length;
       $("filters").innerHTML = FILTERS.filter(function (f) {
-        return product === "libraries" ? !TR_ONLY_FILTERS[f.id] : f.id !== "studio";
+        return product === "libraries" ? !TR_ONLY_FILTERS[f.id] : f.id !== "studio" && f.id !== "downloads";
       }).map(function (f) {
         var n = f.id in count ? count[f.id] : (c[f.id] || 0);
         return '<button type="button" role="tab" class="seg-btn' + (state.filter === f.id ? " is-active" : "") + '" data-filter="' + f.id +
@@ -1002,6 +1035,12 @@
             var sub = [c.live ? c.live + " live" : "", c.pending ? c.pending + " in review" : "", c.drafts ? plural(c.drafts, "draft") : ""].filter(Boolean).join(" · ");
             return '<td class="col-community"><div class="agent-cell"><span class="agent-main">' + esc((c.handle ? "@" + c.handle + " · " : "") + plural(c.made, "component")) +
               (c.pending ? ' <span class="tag tag--warn">Review</span>' : "") + '</span><span class="agent-sub">' + esc(sub) + "</span></div></td>";
+          })() +
+          (function () {
+            var via = SOURCE_LABEL(p.signup_source), dl = p.downloads;
+            if (!via && !dl) return '<td class="col-studio"><span class="muted">·</span></td>';
+            return '<td class="col-studio"><div class="agent-cell"><span class="agent-main">' + esc(via || "Purchase or invite") + "</span>" +
+              (dl ? '<span class="agent-sub">' + esc(plural(dl.n, "download") + " · " + ago(dl.last)) + "</span>" : "") + "</div></td>";
           })() +
           (function () {
             var st = p.studio;
@@ -1070,6 +1109,13 @@
             (a.mcp_calls ? row("MCP", esc(plural(a.mcp_calls, "call")) + (a.recipes ? ", " + esc(plural(a.recipes, "recipe")) + " fetched" : "")) : "") +
             row("Last used", a.last_used ? esc(ago(a.last_used)) : '<span class="muted">Never</span>');
         })(p.agent) : "") +
+        (p.signup_source || p.downloads ? (function () {
+          var dl = p.downloads;
+          return '</dl><div class="insp-divider"></div><div class="insp-section">Free account</div><dl>' +
+            (p.signup_source ? row("Signed up via", esc(SOURCE_LABEL(p.signup_source))) : "") +
+            row("Model downloads", dl ? '<span class="tnum">' + esc(plural(dl.n, "download") + ", last " + ago(dl.last)) + "</span>" : '<span class="muted">None</span>') +
+            (dl && dl.models ? row("Models", esc(Object.keys(dl.models).map(function (m) { return m + " (" + dl.models[m] + ")"; }).join(", "))) : "");
+        })() : "") +
         (p.studio ? (function (st) {
           return '</dl><div class="insp-divider"></div><div class="insp-section">Studio agent</div><dl>' +
             row("This month", '<span class="tnum">' + esc(plural(st.requests_month, "request") + ", " + num(studioCredits(st.usd_month)) + " credits ($" + st.usd_month.toFixed(2) + ")") + "</span>") +
@@ -1135,7 +1181,7 @@
     }
     function sumDays(days) {
       var t = { new_people: 0, new_free: 0, new_paid: 0, renewals: 0, churned: 0, agent_keys: 0, agent_signups: 0, agent_fixes: 0, agent_blocked: 0, made: 0, published: 0,
-        ai_drafts: 0, ai_credits_free: 0, ai_credits_paid: 0, ai_tokens_free: 0, ai_tokens_paid: 0, upgrades: 0, conversions: 0, paid_by: {}, revenue: {}, upgrades_by: {} };
+        ai_drafts: 0, ai_credits_free: 0, ai_credits_paid: 0, ai_tokens_free: 0, ai_tokens_paid: 0, upgrades: 0, conversions: 0, model_downloads: 0, paid_by: {}, revenue: {}, upgrades_by: {} };
       days.forEach(function (d) {
         for (var k in t) if (typeof t[k] === "number") t[k] += d[k] || 0;
         for (var p in d.paid_by) t.paid_by[p] = (t.paid_by[p] || 0) + d.paid_by[p];
@@ -1171,7 +1217,7 @@
           line("Free to paid", t.conversions || 0) +
           line("Renewals", t.renewals) +
           line("Churned", t.churned) +
-          (product === "libraries" ? "" : line("Agent signups", t.agent_signups + (t.agent_keys > t.agent_signups ? ' <span class="muted">+' + (t.agent_keys - t.agent_signups) + " keys</span>" : "")) +
+          (product === "libraries" ? line("Model downloads", t.model_downloads || 0) : line("Agent signups", t.agent_signups + (t.agent_keys > t.agent_signups ? ' <span class="muted">+' + (t.agent_keys - t.agent_signups) + " keys</span>" : "")) +
           line("Agent fixes", t.agent_fixes) +
           line("Builder drafts", num(t.ai_drafts)) +
           line("Credits free / paid", num(t.ai_credits_free) + " / " + num(t.ai_credits_paid)) +
@@ -1202,7 +1248,7 @@
       var cell = function (n, extra) { return '<td class="num tnum' + (n ? "" : " zero") + (extra ? " " + extra : "") + '">' + (n || "0") + "</td>"; };
       html += '<div class="table-wrap"><table class="day-table"><thead><tr>' +
         '<th>Day</th><th class="num">New</th><th class="num">Free</th><th>New paying</th><th>Upgrades</th><th class="num">Revenue</th><th class="num">Renewals</th><th class="num">Churned</th>' +
-        (product === "libraries" ? "" : '<th class="num col-agentday">Agent signups</th><th class="num col-agentday">Agent fixes</th><th class="num col-agentday">Agent active</th><th class="num">Made</th><th class="num">Published</th><th class="num">Drafts</th><th class="num" title="Builder credits used, free + paid">Credits</th>') + "</tr></thead><tbody>" +
+        (product === "libraries" ? '<th class="num">Model downloads</th>' : '<th class="num col-agentday">Agent signups</th><th class="num col-agentday">Agent fixes</th><th class="num col-agentday">Agent active</th><th class="num">Made</th><th class="num">Published</th><th class="num">Drafts</th><th class="num" title="Builder credits used, free + paid">Credits</th>') + "</tr></thead><tbody>" +
         days.map(function (d, i) {
           return '<tr data-day="' + esc(d.date) + '"' + (i === 0 ? ' class="is-today"' : "") + ' title="Show who joined, paid or upgraded this day">' +
             "<td>" + esc(i === 0 ? "Today" : i === 1 ? "Yesterday" : fmtDate(d.date, true)) + "</td>" +
@@ -1211,7 +1257,7 @@
             "<td>" + (d.upgrades ? '<span class="mini">' + upgradeChips(d.upgrades_by) + "</span>" : '<span class="muted">0</span>') + "</td>" +
             '<td class="num tnum' + (paidText(d.revenue) ? "" : " zero") + '">' + esc(paidText(d.revenue) || "$0") + "</td>" +
             cell(d.renewals) + cell(d.churned) +
-            (product === "libraries" ? "" :
+            (product === "libraries" ? cell(d.model_downloads) :
             cell(d.agent_signups, "col-agentday") + cell(d.agent_fixes, "col-agentday") + cell(d.agent_active, "col-agentday") +
             cell(d.made) + cell(d.published) + cell(d.ai_drafts) +
             '<td class="num tnum' + (d.ai_credits_free + d.ai_credits_paid ? "" : " zero") + '" title="' + esc("free " + num(d.ai_credits_free) + " (" + tok(d.ai_tokens_free) + " tokens), paid " + num(d.ai_credits_paid) + " (" + tok(d.ai_tokens_paid) + " tokens)") + '">' +
@@ -1329,6 +1375,7 @@
       $("agent-band").hidden = other;
       $("builder-band").hidden = other;
       $("studio-band").hidden = other;
+      $("free-band").hidden = other;
       $("people-toolbar").hidden = other;
       $("people-body").hidden = other;
       $("export-btn").hidden = other;
@@ -1343,7 +1390,7 @@
         '<button type="button" id="day-clear" aria-label="Clear day filter"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></span>';
       $("day-clear").addEventListener("click", function () { state.day = null; renderDayFilter(); renderRows(); });
     }
-    function render() { renderStats(); renderAgent(); renderBuilder(); renderStudio(); renderFilters(); renderDayFilter(); renderRows(); renderInspector(); if (state.view === "daily") renderDaily(); if (state.view === "errors") renderErrors(); if (state.view === "builder") renderBuilderView(); }
+    function render() { renderStats(); renderAgent(); renderBuilder(); renderStudio(); renderFree(); renderFilters(); renderDayFilter(); renderRows(); renderInspector(); if (state.view === "daily") renderDaily(); if (state.view === "errors") renderErrors(); if (state.view === "builder") renderBuilderView(); }
     function select(email) {
       state.selected = state.selected === email ? null : email;
       document.querySelectorAll("#rows tr").forEach(function (tr) { tr.classList.toggle("selected", tr.getAttribute("data-email") === state.selected); });
@@ -1643,7 +1690,7 @@
       clearTimeout(pollT);
       state.data = null; state.selected = null; state.filter = "all"; state.day = null;
       if ((state.view === "errors" || state.view === "builder") && product === "libraries") setView("people");
-      ["stats", "agent-band", "builder-band", "studio-band"].forEach(function (id) { $(id).innerHTML = ""; });
+      ["stats", "agent-band", "builder-band", "studio-band", "free-band"].forEach(function (id) { $(id).innerHTML = ""; });
       $("inspector").hidden = true;
       $("subtitle").textContent = "Loading…";
       boot();
